@@ -1,6 +1,7 @@
 package com.kentnek.cdcl.algo.picker;
 
 import com.kentnek.cdcl.model.Assignment;
+import com.kentnek.cdcl.model.Clause;
 
 /**
  * A {@link BranchPicker} selects a variable and its value to be assigned, based on the information from
@@ -17,4 +18,8 @@ public interface BranchPicker extends Assignment.Listener {
      * @return a pair {@link VariableValue}.
      */
     VariableValue select();
+
+    default void learn(Clause clause) {
+
+    }
 }

@@ -76,6 +76,8 @@ public class CdclSolver implements SatSolver {
                 if (newDecisionLevel < 0) return null;
 
                 formula.add(learnedClause);
+                branchPicker.learn(learnedClause);
+
                 Logger.debug("Assignment after backtrack: " + assignment.toStringFull());
             }
 
