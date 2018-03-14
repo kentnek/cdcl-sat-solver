@@ -1,6 +1,6 @@
 package com.kentnek.cdcl.algo.picker;
 
-import com.kentnek.cdcl.model.Assignment;
+import com.kentnek.cdcl.model.Formula;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -18,9 +18,9 @@ public abstract class TrackingUnassignedVariablesPicker implements BranchPicker 
     protected final Set<Integer> unassignedVariables = new HashSet<>();
 
     @Override
-    public void attach(Assignment assignment) {
+    public void init(Formula formula) {
         unassignedVariables.clear();
-        variableCount = assignment.getVariableCount();
+        variableCount = formula.getVariableCount();
         for (int i = 1; i <= variableCount; i++) unassignedVariables.add(i);
     }
 

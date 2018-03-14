@@ -47,9 +47,10 @@ public class CdclSolver implements SatSolver {
             throw new IllegalArgumentException("'branchPicker', 'conflictAnalyzer' and 'unitPropagator' must be not null.");
         }
 
+        branchPicker.init(formula);
+
         Assignment assignment = new Assignment(formula.getVariableCount());
         assignment.setListener(branchPicker);
-        branchPicker.init(formula);
 
         // Try unit propagation once to detect top-level conflicts,
         // returns null assignment if there is any.

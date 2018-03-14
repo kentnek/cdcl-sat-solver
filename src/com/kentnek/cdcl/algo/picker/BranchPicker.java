@@ -20,11 +20,8 @@ public interface BranchPicker extends Assignment.Listener {
      */
     VariableValue select();
 
+    void init(Formula formula);
+
     default void learn(Clause clause) {
-
-    }
-
-    default void init(Formula formula) {
-
     }
 }

@@ -66,7 +66,6 @@ public class Assignment implements Iterable<Assignment.SingleAssignment> {
     private Listener listener = null;
 
     public interface Listener {
-        void attach(Assignment assignment);
 
         void add(int variable, boolean value);
 
@@ -74,7 +73,6 @@ public class Assignment implements Iterable<Assignment.SingleAssignment> {
     }
 
     public void setListener(Listener listener) {
-        listener.attach(this);
         this.listener = listener;
     }
 
