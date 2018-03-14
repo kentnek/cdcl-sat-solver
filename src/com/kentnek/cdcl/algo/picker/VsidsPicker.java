@@ -1,9 +1,9 @@
 package com.kentnek.cdcl.algo.picker;
 
-import com.kentnek.cdcl.model.Assignment;
 import com.kentnek.cdcl.model.Clause;
+import com.kentnek.cdcl.model.Formula;
 
-import java.util.ArrayList;
+import java.util.TreeSet;
 
 /**
  * A simple implementation of the Variable State Independent Decaying Sum heuristic.
@@ -15,7 +15,7 @@ import java.util.ArrayList;
 
 public class VsidsPicker extends TrackingUnassignedVariablesPicker {
 
-    private ArrayList<LiteralScore> scores;
+    private TreeSet<LiteralScore> scores;
 
     private class LiteralScore implements Comparable<LiteralScore> {
         int literal;
@@ -29,6 +29,8 @@ public class VsidsPicker extends TrackingUnassignedVariablesPicker {
         LiteralScore(int literalNum) {
             this.literal = 0;
         }
+
+        // https://github.com/zjusbo/chaff_sat_solver/blob/master/solver.cpp
     }
 
     @Override
@@ -37,12 +39,7 @@ public class VsidsPicker extends TrackingUnassignedVariablesPicker {
     }
 
     @Override
-    public void attach(Assignment assignment) {
-        super.attach(assignment);
-
-        for (int v = 1; v<=assignment.getVariableCount(); v++) {
-
-        }
+    public void init(Formula formula) {
 
     }
 

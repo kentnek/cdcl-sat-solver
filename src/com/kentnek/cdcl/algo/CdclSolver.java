@@ -49,6 +49,7 @@ public class CdclSolver implements SatSolver {
 
         Assignment assignment = new Assignment(formula.getVariableCount());
         assignment.setListener(branchPicker);
+        branchPicker.init(formula);
 
         // Try unit propagation once to detect top-level conflicts,
         // returns null assignment if there is any.
