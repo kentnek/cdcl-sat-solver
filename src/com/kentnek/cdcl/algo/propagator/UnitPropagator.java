@@ -1,0 +1,22 @@
+package com.kentnek.cdcl.algo.propagator;
+
+import com.kentnek.cdcl.model.Assignment;
+import com.kentnek.cdcl.model.Formula;
+
+/**
+ * Unit propagation module.
+ * <p>
+ *
+ * @author kentnek
+ */
+
+public interface UnitPropagator {
+    /**
+     * Performs unit propagation and assigns values to unit literals if any.
+     *
+     * @param formula    the formula to perform unit propagation on.
+     * @param assignment the current assignment for the formula.
+     * @return true if no conflict is found, false otherwise.
+     */
+    boolean propagate(Formula formula, Assignment assignment);
+}
