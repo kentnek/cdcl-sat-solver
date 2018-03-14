@@ -3,14 +3,14 @@ package com.kentnek.cdcl;
 import com.kentnek.cdcl.algo.CdclSolver;
 import com.kentnek.cdcl.algo.SatSolver;
 import com.kentnek.cdcl.algo.analyzer.ClauseLearning;
-import com.kentnek.cdcl.algo.picker.LinearPicker;
+import com.kentnek.cdcl.algo.picker.RandomPicker;
 import com.kentnek.cdcl.algo.propagator.DefaultUnitPropagator;
 import com.kentnek.cdcl.model.Assignment;
 import com.kentnek.cdcl.model.Formula;
 
 public class Main {
 
-    private static final String INPUT_FILE_PATH = "inputs/b.cnf";
+    private static final String INPUT_FILE_PATH = "inputs/60var_unsat_long.cnf";
 
     static {
         Logger.setShowDebug(false);
@@ -29,7 +29,7 @@ public class Main {
         }
 
         SatSolver solver = new CdclSolver()
-                .with(new LinearPicker())
+                .with(new RandomPicker())
                 .with(new DefaultUnitPropagator())
                 .with(new ClauseLearning());
 
