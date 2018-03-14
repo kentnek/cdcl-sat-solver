@@ -33,8 +33,9 @@ public class ClauseLearning implements ConflictAnalyzer {
         int conflictingDecisionLevel = assignment.getCurrentDecisionLevel();
 
         // omega
-        Clause prevLearnedClause = null;
         Clause learnedClause = formula.getClause(assignment.getKappaAntecedent()).copy();
+
+        Clause prevLearnedClause = null;
 
         while (!learnedClause.equals(prevLearnedClause)) {
             // sigma = number of literals in omega assigned at current decision level
@@ -61,7 +62,6 @@ public class ClauseLearning implements ConflictAnalyzer {
                 prevLearnedClause = learnedClause;
                 learnedClause = resolve(learnedClause, clauseToResolve);
             }
-
         }
 
         return learnedClause;
