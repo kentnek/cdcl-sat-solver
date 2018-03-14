@@ -10,7 +10,7 @@ import com.kentnek.cdcl.model.Formula;
 
 public class Main {
 
-    private static final String INPUT_FILE_PATH = "inputs/unsat_simple.cnf";
+    private static final String INPUT_FILE_PATH = "inputs/b.cnf";
 
     static {
         Logger.setShowDebug(false);
@@ -27,7 +27,6 @@ public class Main {
         } else {
             Logger.log("The formula is too big to be displayed.");
         }
-
 
         SatSolver solver = new CdclSolver()
                 .with(new LinearPicker())
