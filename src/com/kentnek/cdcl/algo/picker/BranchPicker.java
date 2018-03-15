@@ -12,16 +12,16 @@ import com.kentnek.cdcl.model.Formula;
  * @author kentnek
  */
 
-public interface BranchPicker extends Assignment.Listener {
+public interface BranchPicker {
     /**
      * Choose the next variable to assign.
      *
      * @return a pair {@link VariableValue}.
      */
-    VariableValue select();
+    VariableValue select(Assignment assignment);
 
     void init(Formula formula);
 
-    default void learn(Clause clause) {
+    default void learn(Clause learnedClause) {
     }
 }

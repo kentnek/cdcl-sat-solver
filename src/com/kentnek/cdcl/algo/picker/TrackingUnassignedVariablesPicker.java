@@ -1,5 +1,6 @@
 package com.kentnek.cdcl.algo.picker;
 
+import com.kentnek.cdcl.model.Assignment;
 import com.kentnek.cdcl.model.Formula;
 
 import java.util.HashSet;
@@ -12,7 +13,7 @@ import java.util.Set;
  * @author kentnek
  */
 
-public abstract class TrackingUnassignedVariablesPicker implements BranchPicker {
+public abstract class TrackingUnassignedVariablesPicker implements BranchPicker, Assignment.Listener {
 
     protected int variableCount;
     protected final Set<Integer> unassignedVariables = new HashSet<>();

@@ -1,9 +1,11 @@
 package com.kentnek.cdcl.algo.picker;
 
+import com.kentnek.cdcl.model.Assignment;
 import com.kentnek.cdcl.model.Clause;
 import com.kentnek.cdcl.model.Formula;
+import com.kentnek.cdcl.model.Literal;
 
-import java.util.TreeSet;
+import java.util.concurrent.ConcurrentSkipListMap;
 
 /**
  * A simple implementation of the Variable State Independent Decaying Sum heuristic.
@@ -15,36 +17,39 @@ import java.util.TreeSet;
 
 public class VsidsPicker extends TrackingUnassignedVariablesPicker {
 
-    private TreeSet<LiteralScore> scores;
+    private ConcurrentSkipListMap<Integer, Integer> scores;
 
-    private class LiteralScore implements Comparable<LiteralScore> {
-        int literal;
-        float score;
+    private int decayPeriod = 256;
+    private float decayAmount = 0.5f;
 
-        @Override
-        public int compareTo(LiteralScore other) {
-            return Float.compare(this.score, other.score);
-        }
-
-        LiteralScore(int literalNum) {
-            this.literal = 0;
-        }
-
-        // https://github.com/zjusbo/chaff_sat_solver/blob/master/solver.cpp
-    }
+    private int conflictCount = 0;
 
     @Override
-    public VariableValue select() {
+    public VariableValue select(Assignment assignment) {
+        for (int literalValue : scores.descendingKeySet()) {
+            if (!assignment.contains(Math.abs(literalValue))) {
+                return new VariableValue(Math.abs(literalValue), literalValue > 0);
+            }
+        }
+
         return null;
+    }
+
+    private void incrementCount(Literal literal) {
+        scores.merge(literal.toLiteralNum(), 1, Integer::sum);
     }
 
     @Override
     public void init(Formula formula) {
-
+        scores = new ConcurrentSkipListMap<>();
+        formula.forEach(c -> c.forEach(this::incrementCount));
     }
 
     @Override
-    public void learn(Clause clause) {
+    public void learn(Clause learnedClause) {
+        learnedClause.forEach(this::incrementCount);
 
+        conflictCount = conflictCount++ % decayPeriod;
+        if (conflictCount == 0) scores.replaceAll((k, v) -> (int) (v * decayAmount));
     }
 }

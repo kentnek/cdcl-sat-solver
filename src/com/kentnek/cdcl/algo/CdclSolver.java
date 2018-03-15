@@ -50,7 +50,9 @@ public class CdclSolver implements SatSolver {
         branchPicker.init(formula);
 
         Assignment assignment = new Assignment(formula.getVariableCount());
-        assignment.setListener(branchPicker);
+        if (branchPicker instanceof Assignment.Listener) {
+            assignment.setListener((Assignment.Listener) branchPicker);
+        }
 
         // Try unit propagation once to detect top-level conflicts,
         // returns null assignment if there is any.
@@ -60,7 +62,7 @@ public class CdclSolver implements SatSolver {
 
         // Loop until the assignment is complete.
         while (!assignment.isComplete()) {
-            VariableValue branchVar = branchPicker.select();
+            VariableValue branchVar = branchPicker.select(assignment);
             Logger.debug("\nPicked: " + branchVar);
 
             assignment.incrementDecisionLevel();

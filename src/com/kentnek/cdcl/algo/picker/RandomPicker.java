@@ -1,5 +1,7 @@
 package com.kentnek.cdcl.algo.picker;
 
+import com.kentnek.cdcl.model.Assignment;
+
 import java.util.Random;
 
 /**
@@ -13,7 +15,7 @@ public class RandomPicker extends TrackingUnassignedVariablesPicker {
     private final Random rand = new Random();
 
     @Override
-    public VariableValue select() {
+    public VariableValue select(Assignment assignment) {
         int randomIndex = rand.nextInt(unassignedVariables.size());
         int variable = unassignedVariables.stream().skip(randomIndex).findFirst().get();
         return new VariableValue(variable, true);

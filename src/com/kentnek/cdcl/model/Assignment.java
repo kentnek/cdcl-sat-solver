@@ -102,9 +102,9 @@ public class Assignment implements Iterable<Assignment.SingleAssignment> {
         assert (variable > 0 && variable <= variableCount);
     }
 
-    //TODO remove, only for debug
-    public void add(int variable, boolean value, int dl, int antecedent) {
-        add(new SingleAssignment(variable, value, dl, antecedent));
+    public boolean contains(int variable) {
+        checkVariable(variable);
+        return map.containsKey(variable);
     }
 
     public void add(int variable, boolean value, int antecedent) {
@@ -113,7 +113,6 @@ public class Assignment implements Iterable<Assignment.SingleAssignment> {
 
     public void add(SingleAssignment single) {
         checkVariable(single.variable);
-
 
         map.put(single.variable, single);
 
