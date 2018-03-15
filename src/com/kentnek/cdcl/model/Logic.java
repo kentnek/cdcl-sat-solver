@@ -1,7 +1,7 @@
 package com.kentnek.cdcl.model;
 
 /**
- * [Description]
+ * Represents a 3-state logic value: true, false and undefined.
  * <p>
  *
  * @author kentnek

@@ -4,6 +4,7 @@ import com.kentnek.cdcl.Logger;
 import com.kentnek.cdcl.algo.analyzer.ConflictAnalyzer;
 import com.kentnek.cdcl.algo.picker.BranchPicker;
 import com.kentnek.cdcl.algo.picker.VariableValue;
+import com.kentnek.cdcl.algo.preprocessor.FormulaPreprocessor;
 import com.kentnek.cdcl.algo.propagator.UnitPropagator;
 import com.kentnek.cdcl.model.Assignment;
 import com.kentnek.cdcl.model.Clause;
@@ -21,9 +22,15 @@ import static com.kentnek.cdcl.model.Assignment.NIL;
 
 public class CdclSolver implements SatSolver {
 
+    private FormulaPreprocessor formulaPreprocessor;
     private BranchPicker branchPicker;
     private ConflictAnalyzer conflictAnalyzer;
     private UnitPropagator unitPropagator;
+
+    public CdclSolver with(FormulaPreprocessor preprocessor) {
+        this.formulaPreprocessor = preprocessor;
+        return this;
+    }
 
     public CdclSolver with(BranchPicker picker) {
         this.branchPicker = picker;
@@ -47,30 +54,39 @@ public class CdclSolver implements SatSolver {
             throw new IllegalArgumentException("'branchPicker', 'conflictAnalyzer' and 'unitPropagator' must be not null.");
         }
 
-        branchPicker.init(formula);
-
         Assignment assignment = new Assignment(formula.getVariableCount());
-        if (branchPicker instanceof Assignment.Listener) {
-            assignment.setListener((Assignment.Listener) branchPicker);
+
+        if (this.formulaPreprocessor != null) {
+            int originalCount = formula.getClauseSize();
+            formula = this.formulaPreprocessor.preprocess(formula, assignment);
+            if (formula.getClauseSize() < originalCount) {
+                Logger.debug("Formula after preprocessing:", formula);
+                Logger.debug("Assignment after preprocessing:", assignment, "\n");
+            }
         }
+
+        if (branchPicker instanceof Assignment.Listener) assignment.setListener((Assignment.Listener) branchPicker);
+        if (branchPicker instanceof Formula.Listener) formula.setListener((Formula.Listener) branchPicker);
+        branchPicker.init(formula, assignment);
 
         // Try unit propagation once to detect top-level conflicts,
         // returns null assignment if there is any.
         if (!unitPropagator.propagate(formula, assignment)) return null;
 
-        Logger.debug("Assignment after initial propagation:", assignment.toStringFull());
+        Logger.debug("Assignment after initial propagation:", assignment);
 
         // Loop until the assignment is complete.
         while (!assignment.isComplete()) {
             VariableValue branchVar = branchPicker.select(assignment);
-            Logger.debug("\nPicked: " + branchVar);
+            Logger.debug("\n======\nPicked: " + branchVar);
 
             assignment.incrementDecisionLevel();
             assignment.add(branchVar.variable, branchVar.value, NIL);
 
             // Loop until there's no more conflict.
             while (!unitPropagator.propagate(formula, assignment)) {
-                Logger.debug("Assignment after propagation: " + assignment.toStringFull());
+                Logger.debug("\nConflict! kappa =", formula.getClause(assignment.getKappaAntecedent()));
+                Logger.debug("Assignment after propagation: " + assignment);
 
                 Clause learnedClause = conflictAnalyzer.analyze(formula, assignment);
                 Logger.debug("Learned clause = " + learnedClause);
@@ -79,10 +95,9 @@ public class CdclSolver implements SatSolver {
                 Logger.debug("Backtrack level = " + newDecisionLevel);
                 if (newDecisionLevel < 0) return null;
 
-                formula.add(learnedClause);
-                branchPicker.learn(learnedClause);
+                formula.add(learnedClause, true);
 
-                Logger.debug("Assignment after backtrack: " + assignment.toStringFull());
+                Logger.debug("Assignment after backtrack: " + assignment);
             }
 
         }

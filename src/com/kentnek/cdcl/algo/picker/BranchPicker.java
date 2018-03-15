@@ -20,7 +20,7 @@ public interface BranchPicker {
      */
     VariableValue select(Assignment assignment);
 
-    void init(Formula formula);
+    void init(Formula formula, Assignment assignment);
 
     default void learn(Clause learnedClause) {
     }

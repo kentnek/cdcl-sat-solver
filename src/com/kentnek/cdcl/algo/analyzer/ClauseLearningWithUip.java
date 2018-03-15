@@ -14,15 +14,14 @@ import static com.kentnek.cdcl.model.Assignment.NIL;
  * @author kentnek
  */
 
-public class ClauseLearning implements ConflictAnalyzer {
+public class ClauseLearningWithUip implements ConflictAnalyzer {
 
     private boolean stopLearningAtUIP = true;
 
-    public boolean shouldStopLearningAtUIP() {
-        return stopLearningAtUIP;
+    public ClauseLearningWithUip() {
     }
 
-    public void setStopLearningAtUIP(boolean stopLearningAtUIP) {
+    public ClauseLearningWithUip(boolean stopLearningAtUIP) {
         this.stopLearningAtUIP = stopLearningAtUIP;
     }
 
@@ -55,7 +54,7 @@ public class ClauseLearning implements ConflictAnalyzer {
                 }
             }
 
-            if ((shouldStopLearningAtUIP() && levelLiteralCount == 1 && conflictingDecisionLevel != 0) || clauseToResolve == null) {
+            if ((stopLearningAtUIP && levelLiteralCount == 1 && conflictingDecisionLevel != 0) || clauseToResolve == null) {
                 // Stop resolving upon UIP (only one literal in omega at conflict level) or no more literal to resolve.
                 break;
             } else {
@@ -91,6 +90,5 @@ public class ClauseLearning implements ConflictAnalyzer {
 
         return result;
     }
-
 
 }

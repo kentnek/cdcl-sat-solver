@@ -7,9 +7,8 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * An {@link Assignment} stores the {@link Logic} value assigned to variables in a formula.
  * <p>
- * Created on Mar 12, 2018.
  *
- * @author itaqm
+ * @author kentnek
  */
 
 public class Assignment implements Iterable<Assignment.SingleAssignment> {
@@ -154,15 +153,38 @@ public class Assignment implements Iterable<Assignment.SingleAssignment> {
 
         StringBuilder builder = new StringBuilder();
 
-        map.forEach((var, single) -> builder
-                .append("x").append(var)
-                .append(" -> ")
-                .append(single.value ? "T" : "F")
-                .append(", ")
-        );
+        if (getVariableCount() <= 10) {
+            map.forEach((var, single) -> builder
+                    .append("x").append(var)
+                    .append(" -> ")
+                    .append(single.value ? "T" : "F")
+                    .append(", ")
+            );
+        } else {
+            map.forEach((var, single) -> builder
+                    .append(single.value ? "" : "¬")
+                    .append("x").append(var)
+                    .append(", ")
+            );
+        }
+
 
         String ret = builder.toString();
         return ret.substring(0, ret.lastIndexOf(","));
+    }
+
+    public String toMinisatString() {
+        if (map.isEmpty()) return "<empty>";
+
+        StringBuilder builder = new StringBuilder();
+
+        map.forEach((var, single) -> builder
+                .append(single.value ? "" : "-")
+                .append(var)
+                .append(" ")
+        );
+
+        return builder.append(0).toString();
     }
 
     public String toStringFull() {

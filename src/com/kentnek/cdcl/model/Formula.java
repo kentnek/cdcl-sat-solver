@@ -1,8 +1,7 @@
 package com.kentnek.cdcl.model;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
+import com.kentnek.cdcl.Logger;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -18,19 +17,7 @@ public class Formula implements Iterable<Clause> {
     private final int variableCount;
     private final List<Clause> clauses;
 
-    @Override
-    public String toString() {
-        StringBuilder builder = new StringBuilder();
-
-        for (int i = 0; i < clauses.size(); i++) {
-            builder.append(clauses.get(i).toString());
-            if (i < clauses.size() - 1) builder.append(" ∧ ");
-        }
-
-        return builder.toString();
-    }
-
-    private Formula(int variableCount) {
+    public Formula(int variableCount) {
         assert (variableCount > 0);
         this.variableCount = variableCount;
         this.clauses = new ArrayList<>();
@@ -38,23 +25,6 @@ public class Formula implements Iterable<Clause> {
 
     public int getVariableCount() {
         return variableCount;
-    }
-
-    public Logic evaluate(Assignment assignment) {
-        Logic result = Logic.UNDEFINED;
-
-        for (Clause clause : clauses) {
-            Logic value = clause.evaluate(assignment);
-            result = (result == Logic.UNDEFINED) ? value : result.and(value);
-            if (result == Logic.FALSE || result == Logic.UNDEFINED) return result;
-        }
-
-        return result;
-    }
-
-    public void add(Clause clause) {
-        clause.id = clauses.size();
-        clauses.add(clause);
     }
 
     public Clause getClause(int i) {
@@ -65,58 +35,59 @@ public class Formula implements Iterable<Clause> {
         return clauses.size();
     }
 
-    public static Formula parseFromFile(String inputFilePath) {
-        try (BufferedReader br = new BufferedReader(new FileReader(inputFilePath))) {
-            Formula formula = null;
-            int variableNum = 0;
-            int clauseNum = 0;
-            Clause clause = null;
+    public void add(Clause clause) {
+        add(clause, false);
+    }
 
-            for (String line; (line = br.readLine()) != null; ) {
-                if (line.startsWith("c") || line.isEmpty()) continue; // Comment line
+    public void add(Clause clause, boolean isLearning) {
+        clause.id = clauses.size();
+        clauses.add(clause);
+        if (isLearning && listener != null) listener.learn(clause);
+    }
 
-                String[] tokens = line.trim().split("\\s+");
+    public void remove(Clause clause) {
+        clauses.remove(clause);
+    }
 
-                if (line.startsWith("p cnf")) { // literals definition line
-                    variableNum = Integer.parseInt(tokens[2]);
-                    clauseNum = Integer.parseInt(tokens[3]);
-                    formula = new Formula(variableNum);
-                    continue;
-                } else if (formula == null) continue;
+    //region Listener
 
-                if (clause == null) { // Clause line
-                    clause = new Clause(variableNum);
-                }
+    private Listener listener = null;
 
-                for (String token : tokens) {
-                    int literalNum = Integer.parseInt(token);
+    public interface Listener {
+        void learn(Clause clause);
+    }
 
-                    if (literalNum == 0) {
-                        formula.add(clause);
-                        clause = null;
-                        break;
-                    }
+    public void setListener(Listener listener) {
+        this.listener = listener;
+    }
 
-                    clause.add(new Literal(literalNum));
-                }
+    //endregion
 
+    public Logic evaluate(Assignment assignment) {
+        Logic result = Logic.UNDEFINED;
+
+        for (Clause clause : clauses) {
+            Logic value = clause.evaluate(assignment);
+            result = (result == Logic.UNDEFINED) ? value : result.and(value);
+            if (result == Logic.FALSE || result == Logic.UNDEFINED) {
+                Logger.log("false clause:", clause);
+                return result;
             }
-
-            if (formula != null && formula.getClauseSize() != clauseNum) {
-                System.out.println(String.format(
-                        "Clause number defined to be %d, but found %d instead.",
-                        clauseNum, formula.getClauseSize()
-                ));
-
-                return null;
-            }
-
-            return formula;
-
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
         }
+
+        return result;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+
+        for (int i = 0; i < clauses.size(); i++) {
+            builder.append(clauses.get(i).toString());
+            if (i < clauses.size() - 1) builder.append(" ∧ ");
+        }
+
+        return builder.toString();
     }
 
     @Override

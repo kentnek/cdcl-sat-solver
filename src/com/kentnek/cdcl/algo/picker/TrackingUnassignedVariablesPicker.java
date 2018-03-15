@@ -19,10 +19,13 @@ public abstract class TrackingUnassignedVariablesPicker implements BranchPicker,
     protected final Set<Integer> unassignedVariables = new HashSet<>();
 
     @Override
-    public void init(Formula formula) {
-        unassignedVariables.clear();
+    public void init(Formula formula, Assignment assignment) {
         variableCount = formula.getVariableCount();
-        for (int i = 1; i <= variableCount; i++) unassignedVariables.add(i);
+
+        unassignedVariables.clear();
+        for (int i = 1; i <= variableCount; i++) {
+            if (!assignment.contains(i)) unassignedVariables.add(i);
+        }
     }
 
     @Override
