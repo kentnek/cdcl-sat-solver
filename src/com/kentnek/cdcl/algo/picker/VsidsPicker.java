@@ -11,6 +11,9 @@ import java.util.stream.Collectors;
 
 /**
  * A simple implementation of the Variable State Independent Decaying Sum (VSIDS) heuristic.
+ * <p>
+ * This picker increments the scores for literals in a learned clause, so it needs to listen to the "learn" event
+ * emitted by {@link Formula}.
  *
  * @author kentnek
  * @see <a href="https://www.princeton.edu/~chaff/publication/DAC2001v56.pdf"/>
@@ -26,8 +29,8 @@ public class VsidsPicker implements BranchPicker, Formula.Listener {
     private float decayAmount = 0.5f;
 
     /**
-     * During selection, the variables that have the highest scores are most likely to be chosen.
-     * This setting determines the probability that the next highest score will be chosen instead.
+     * During selection, the variables that have the highest scores are most likely to be chosen. This setting
+     * determines the probability that the next highest score will be chosen instead.
      */
     private float findNextHighestScoreProb = 0.3f;
 

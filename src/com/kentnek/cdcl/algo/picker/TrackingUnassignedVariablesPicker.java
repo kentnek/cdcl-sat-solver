@@ -9,6 +9,7 @@ import java.util.Set;
 /**
  * An abstract subclass of {@link BranchPicker} that tracks unassigned variables.
  * <p>
+ * This picker listens to events emitted by {@link Assignment} to keep track of the unassigned variables in a set.
  *
  * @author kentnek
  */
@@ -29,7 +30,7 @@ public abstract class TrackingUnassignedVariablesPicker implements BranchPicker,
     }
 
     @Override
-    public void add(int variable, boolean value) {
+    public void add(int variable, boolean value, int antecedent) {
         unassignedVariables.remove(variable);
     }
 

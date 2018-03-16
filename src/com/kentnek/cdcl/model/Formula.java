@@ -9,6 +9,9 @@ import java.util.List;
 /**
  * Represents a CNF formula, which is a conjunction over clauses: c_1 ∧ c_2 ∧ ... c_n.
  * <p>
+ * This object emits one event to an attached {@link Listener}: "learn" when a new clause is added to the formula after
+ * conflict analysis.
+ * <p>
  *
  * @author kentnek
  */
@@ -42,7 +45,7 @@ public class Formula implements Iterable<Clause> {
     public void add(Clause clause, boolean isLearning) {
         clause.id = clauses.size();
         clauses.add(clause);
-        if (isLearning && listener != null) listener.learn(clause);
+        if (isLearning) listeners.forEach(l -> l.learn(clause));
     }
 
     public void remove(Clause clause) {
@@ -51,14 +54,17 @@ public class Formula implements Iterable<Clause> {
 
     //region Listener
 
-    private Listener listener = null;
+    private List<Listener> listeners = new ArrayList<>();
 
-    public interface Listener {
+    public interface Listener extends GenericListener {
         void learn(Clause clause);
     }
 
-    public void setListener(Listener listener) {
-        this.listener = listener;
+    public void register(GenericListener listener) {
+        if (listener instanceof Listener) {
+            Listener casted = (Listener) listener;
+            this.listeners.add(casted);
+        }
     }
 
     //endregion

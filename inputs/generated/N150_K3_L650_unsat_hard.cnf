@@ -4,7 +4,7 @@ c Generated randomly by kentnek.
 c
 c N = 150, K = 3, L = 650.
 c
-c NOTE: Unsatisfiable (taking very long time >50s).
+c NOTE: Unsatisfiable (taking very long time >50s for naive propagator, but 10-20s for 2-watched literals).
 c
 p cnf 150 650
 49 22 94 0

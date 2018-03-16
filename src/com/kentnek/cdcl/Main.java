@@ -5,13 +5,15 @@ import com.kentnek.cdcl.algo.SatSolver;
 import com.kentnek.cdcl.algo.analyzer.ClauseLearningWithUip;
 import com.kentnek.cdcl.algo.picker.HybridVsidsPicker;
 import com.kentnek.cdcl.algo.preprocessor.PureLiteralElimination;
-import com.kentnek.cdcl.algo.propagator.DefaultUnitPropagator;
+import com.kentnek.cdcl.algo.propagator.TwoWatchedLiteralPropagator;
 import com.kentnek.cdcl.model.Assignment;
 import com.kentnek.cdcl.model.Formula;
 
+import static com.kentnek.cdcl.Metrics.Key.*;
+
 public class Main {
 
-    private static final String INPUT_FILE_PATH = "inputs/generated/N150_K3_L650_sat.cnf";
+    private static final String INPUT_FILE_PATH = "inputs/others/einstein_puzzle.cnf";
 
     static {
         Logger.setShowDebug(false);
@@ -31,18 +33,23 @@ public class Main {
 
         SatSolver solver = new CdclSolver()
                 .with(new PureLiteralElimination())
-                .with(new HybridVsidsPicker(0.1f))
-                .with(new DefaultUnitPropagator())
+                .with(new HybridVsidsPicker())
+                .with(new TwoWatchedLiteralPropagator())
                 .with(new ClauseLearningWithUip());
 
-        long startTime = System.nanoTime();
+        Metrics.startTimer(TOTAL);
         Assignment assignment = solver.solve(formula);
-        long endTime = System.nanoTime();
+        Metrics.stopTimer(TOTAL);
 
-        long duration = (endTime - startTime);
+        Logger.log("\nAssignment =", assignment == null ? "UNSAT" : assignment);
 
-        Logger.log("\nTime:", duration / 1000000, "ms");
-        Logger.log("Assignment =", assignment == null ? "UNSAT" : assignment);
+        Logger.log("\nTotal time:", Metrics.getElapsedTimeMillis(TOTAL), "ms");
+        Logger.log("Unit propagation time:", Metrics.getElapsedTimeMillis(UNIT_PROPAGATION), "ms");
+        Logger.log("Branch picking invocation count:", Metrics.getCounter(BRANCH_PICKING));
+        Logger.log("Branch picking time:", Metrics.getElapsedTimeMillis(BRANCH_PICKING), "ms");
+        Logger.log("Conflict analysis time:", Metrics.getElapsedTimeMillis(CONFLICT_ANALYSIS), "ms");
+        Logger.log("Final formula size:", formula.getClauseSize());
+
 
         if (assignment != null) {
             Logger.log("\nTest assignment:", formula.evaluate(assignment));

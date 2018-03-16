@@ -3,13 +3,13 @@ package com.kentnek.cdcl.algo.propagator;
 import com.kentnek.cdcl.model.*;
 
 /**
- * Default implementation of {@link UnitPropagator}.
+ * Default implementation of {@link UnitPropagator}, that scans all the literals during propagation.
  * <p>
  *
  * @author kentnek
  */
 
-public class DefaultUnitPropagator implements UnitPropagator {
+public class NaiveUnitPropagator implements UnitPropagator {
 
     @Override
     public boolean propagate(Formula formula, Assignment assignment) {

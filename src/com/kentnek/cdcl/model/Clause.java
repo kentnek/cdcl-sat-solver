@@ -41,6 +41,14 @@ public class Clause implements Iterable<Literal> {
 
     //region Literal access
 
+    public int getLiteralSize() {
+        return literals.size();
+    }
+
+    public Literal get(int index) {
+        return literals.get(index);
+    }
+
     public boolean isEmpty() {
         return this.literals.isEmpty();
     }

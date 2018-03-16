@@ -1,11 +1,18 @@
 package com.kentnek.cdcl.model;
 
+import com.kentnek.cdcl.Logger;
+
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * An {@link Assignment} stores the {@link Logic} value assigned to variables in a formula.
+ * <p>
+ * This object emits two events to an attached {@link Listener}: "add" when a variable is assigned and "remove" when a
+ * variable is unassigned.
  * <p>
  *
  * @author kentnek
@@ -16,8 +23,7 @@ public class Assignment implements Iterable<Assignment.SingleAssignment> {
     private final int variableCount;
 
     /**
-     * Maps variables (>0) to their assigned values (true and false).
-     * This map does not store unassigned variables.
+     * Maps variables (>0) to their assigned values (true and false). This map does not store unassigned variables.
      */
     private final Map<Integer, SingleAssignment> map = new ConcurrentHashMap<>();
 
@@ -62,17 +68,22 @@ public class Assignment implements Iterable<Assignment.SingleAssignment> {
 
     //region Listener
 
-    private Listener listener = null;
+    private List<Listener> listeners = new ArrayList<>();
 
-    public interface Listener {
+    public interface Listener extends GenericListener {
+        default void add(int variable, boolean value, int antecedent) {
+        }
 
-        void add(int variable, boolean value);
-
-        void remove(int variable, boolean value);
+        default void remove(int variable, boolean value) {
+        }
     }
 
-    public void setListener(Listener listener) {
-        this.listener = listener;
+    public void register(GenericListener listener) {
+        if (listener instanceof Listener) {
+            Listener casted = (Listener) listener;
+
+            this.listeners.add(casted);
+        }
     }
 
     //endregion
@@ -115,7 +126,7 @@ public class Assignment implements Iterable<Assignment.SingleAssignment> {
 
         map.put(single.variable, single);
 
-        if (listener != null) listener.add(single.variable, single.value);
+        listeners.forEach(l -> l.add(single.variable, single.value, single.antecedent));
     }
 
     public void remove(int variable) {
@@ -124,7 +135,7 @@ public class Assignment implements Iterable<Assignment.SingleAssignment> {
         boolean value = map.get(variable).value;
         map.remove(variable);
 
-        if (listener != null) listener.remove(variable, value);
+        listeners.forEach(l -> l.remove(variable, value));
     }
 
     public Logic getLiteralValue(Literal literal) {
@@ -134,6 +145,10 @@ public class Assignment implements Iterable<Assignment.SingleAssignment> {
 
         Logic value = Logic.fromBoolean(map.get(variable).value);
         return literal.isNegated ? value.not() : value;
+    }
+
+    public Logic getLiteralValue(int literalNum) {
+        return getLiteralValue(new Literal(literalNum));
     }
 
     public SingleAssignment getSingle(Literal literal) {
@@ -150,6 +165,7 @@ public class Assignment implements Iterable<Assignment.SingleAssignment> {
     @Override
     public String toString() {
         if (map.isEmpty()) return "<empty>";
+        if (Logger.isDebugging()) return toStringFull();
 
         StringBuilder builder = new StringBuilder();
 

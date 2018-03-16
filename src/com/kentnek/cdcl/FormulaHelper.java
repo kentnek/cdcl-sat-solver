@@ -103,7 +103,6 @@ public class FormulaHelper {
                     set.add(rand.nextInt(variables) + 1);
                 }
 
-
                 for (int l : set) {
                     if (rand.nextBoolean()) writer.write("-");
                     writer.write(l + " ");
@@ -118,8 +117,8 @@ public class FormulaHelper {
     }
 
     public static void main(String[] args) {
-        for (int i = 0; i < 5; i++) {
-            FormulaHelper.generateCnf(200, 3, 1000);
+        for (int i = 0; i < 3; i++) {
+            FormulaHelper.generateCnf(50, 3, 300);
         }
     }
 }

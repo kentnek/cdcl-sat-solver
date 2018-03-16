@@ -2,6 +2,7 @@ package com.kentnek.cdcl.algo.propagator;
 
 import com.kentnek.cdcl.model.Assignment;
 import com.kentnek.cdcl.model.Formula;
+import com.kentnek.cdcl.model.GenericListener;
 
 /**
  * Unit propagation module.
@@ -10,7 +11,8 @@ import com.kentnek.cdcl.model.Formula;
  * @author kentnek
  */
 
-public interface UnitPropagator {
+public interface UnitPropagator extends GenericListener{
+
     /**
      * Performs unit propagation and assigns values to unit literals if any.
      *
