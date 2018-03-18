@@ -4,7 +4,7 @@ c SOURCE: Olivier Dubois (dubois@laforia.ibp.fr)
 c
 c DESCRIPTION: Instance from generator gensathard.c
 c
-c NOTE: Not satisfiable
+c NOTE: Not satisfiable, very fast with Hybrid
 c
 c d = 22
 c n = 66

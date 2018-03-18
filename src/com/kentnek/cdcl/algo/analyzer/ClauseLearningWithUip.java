@@ -54,6 +54,7 @@ public class ClauseLearningWithUip implements ConflictAnalyzer {
                 }
             }
 
+
             if ((stopLearningAtUIP && levelLiteralCount == 1 && conflictingDecisionLevel != 0) || clauseToResolve == null) {
                 // Stop resolving upon UIP (only one literal in omega at conflict level) or no more literal to resolve.
                 break;

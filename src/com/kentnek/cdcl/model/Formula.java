@@ -4,6 +4,7 @@ import com.kentnek.cdcl.Logger;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 /**
@@ -18,12 +19,14 @@ import java.util.List;
 
 public class Formula implements Iterable<Clause> {
     private final int variableCount;
-    private final List<Clause> clauses;
+    private final LinkedHashMap<Integer, Clause> clauses;
+
+    private int clauseId = 0;
 
     public Formula(int variableCount) {
         assert (variableCount > 0);
         this.variableCount = variableCount;
-        this.clauses = new ArrayList<>();
+        this.clauses = new LinkedHashMap<>();
     }
 
     public int getVariableCount() {
@@ -43,13 +46,13 @@ public class Formula implements Iterable<Clause> {
     }
 
     public void add(Clause clause, boolean isLearning) {
-        clause.id = clauses.size();
-        clauses.add(clause);
+        clause.id = clauseId++;
+        clauses.put(clause.id, clause);
         if (isLearning) listeners.forEach(l -> l.learn(clause));
     }
 
     public void remove(Clause clause) {
-        clauses.remove(clause);
+        clauses.remove(clause.getId());
     }
 
     //region Listener
@@ -72,7 +75,7 @@ public class Formula implements Iterable<Clause> {
     public Logic evaluate(Assignment assignment) {
         Logic result = Logic.UNDEFINED;
 
-        for (Clause clause : clauses) {
+        for (Clause clause : clauses.values()) {
             Logic value = clause.evaluate(assignment);
             result = (result == Logic.UNDEFINED) ? value : result.and(value);
             if (result == Logic.FALSE || result == Logic.UNDEFINED) {
@@ -98,6 +101,6 @@ public class Formula implements Iterable<Clause> {
 
     @Override
     public Iterator<Clause> iterator() {
-        return this.clauses.iterator();
+        return this.clauses.values().iterator();
     }
 }

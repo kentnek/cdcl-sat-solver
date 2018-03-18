@@ -12,13 +12,13 @@ import java.util.*;
 public class Clause implements Iterable<Literal> {
     int id;
     private final int variableCount;
-    private final List<Literal> literals;
+    private final LinkedHashSet<Literal> literals;
 
     public Clause(int variableCount) {
-        this(variableCount, new ArrayList<>());
+        this(variableCount, new LinkedHashSet<>());
     }
 
-    public Clause(int variableCount, List<Literal> literals) {
+    public Clause(int variableCount, LinkedHashSet<Literal> literals) {
         assert (variableCount > 0);
 
         this.id = -1;
@@ -36,7 +36,7 @@ public class Clause implements Iterable<Literal> {
 
 
     public Clause copy() {
-        return new Clause(this.variableCount, new ArrayList<>(this.literals));
+        return new Clause(this.variableCount, new LinkedHashSet<>(this.literals));
     }
 
     //region Literal access
@@ -46,7 +46,7 @@ public class Clause implements Iterable<Literal> {
     }
 
     public Literal get(int index) {
-        return literals.get(index);
+        return literals.stream().skip(index).findFirst().get();
     }
 
     public boolean isEmpty() {
@@ -86,9 +86,10 @@ public class Clause implements Iterable<Literal> {
     public String toString() {
         StringBuilder builder = new StringBuilder("(");
 
-        for (int i = 0; i < literals.size(); i++) {
-            builder.append(literals.get(i));
-            if (i < literals.size() - 1) builder.append(" v ");
+        int count = 0;
+        for (Literal literal : literals) {
+            builder.append(literal);
+            if (count++ < literals.size() - 1) builder.append(" v ");
         }
 
         builder.append(")");

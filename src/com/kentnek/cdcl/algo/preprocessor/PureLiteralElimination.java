@@ -8,6 +8,7 @@ import com.kentnek.cdcl.model.Literal;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 
 /**
@@ -39,7 +40,7 @@ public class PureLiteralElimination implements FormulaPreprocessor {
     }
 
     @Override
-    public Formula preprocess(Formula formula, Assignment assignment) {
+    public void preprocess(Formula formula, Assignment assignment) {
         Logger.log("\nOriginal clause count =", formula.getClauseSize());
 
         LiteralType[] types = new LiteralType[formula.getVariableCount() + 1];
@@ -65,19 +66,15 @@ public class PureLiteralElimination implements FormulaPreprocessor {
         Logger.debug("Pure literals:", pureLiterals);
         Logger.log("Found", pureLiterals.size(), "pure literals.");
 
-        if (pureLiterals.size() == 0) return formula;
-
-        Formula preprocessedFormula = new Formula(formula.getVariableCount());
+        if (pureLiterals.size() == 0) return;
 
         // remove clauses that contain pure literals
-        for (Clause clause : formula) {
-            if (pureLiterals.stream().anyMatch(clause::contains)) continue;
-            preprocessedFormula.add(clause);
+        Iterator<Clause> iterator = formula.iterator();
+        while (iterator.hasNext()) {
+            if (pureLiterals.stream().anyMatch(iterator.next()::contains)) iterator.remove();
         }
 
-        Logger.log("Preprocessed clause count =", preprocessedFormula.getClauseSize());
-
-        return preprocessedFormula;
+        Logger.log("Preprocessed clause count =", formula.getClauseSize());
     }
 
 }

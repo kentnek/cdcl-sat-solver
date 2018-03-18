@@ -4,8 +4,16 @@ c Generated randomly by kentnek.
 c
 c N = 200, K = 3, L = 1000.
 c
-c NOTE: 
+c NOTE: Unsatisfiable, takes very long (4min).
 c
+c Total time: 263913 ms
+c Unit propagation time: 250714 ms
+c Branch picking invocation count: 66692
+c Branch picking time: 1523 ms
+c Conflict analysis time: 9490 ms
+
+c Final formula size: 56266
+
 p cnf 200 1000
 1 -21 167 0
 32 -133 185 0

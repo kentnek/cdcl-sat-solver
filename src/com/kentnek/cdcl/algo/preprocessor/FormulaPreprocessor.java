@@ -11,5 +11,5 @@ import com.kentnek.cdcl.model.Formula;
  */
 
 public interface FormulaPreprocessor {
-    Formula preprocess(Formula formula, Assignment assignment);
+    void preprocess(Formula formula, Assignment assignment);
 }

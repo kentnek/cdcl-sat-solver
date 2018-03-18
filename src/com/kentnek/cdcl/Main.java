@@ -9,11 +9,13 @@ import com.kentnek.cdcl.algo.propagator.TwoWatchedLiteralPropagator;
 import com.kentnek.cdcl.model.Assignment;
 import com.kentnek.cdcl.model.Formula;
 
+import java.util.Objects;
+
 import static com.kentnek.cdcl.Metrics.Key.*;
 
 public class Main {
 
-    private static final String INPUT_FILE_PATH = "inputs/others/einstein_puzzle.cnf";
+    private static final String INPUT_FILE_PATH = "inputs/others/factor_sat.cnf";
 
     static {
         Logger.setShowDebug(false);
@@ -33,7 +35,7 @@ public class Main {
 
         SatSolver solver = new CdclSolver()
                 .with(new PureLiteralElimination())
-                .with(new HybridVsidsPicker())
+                .with(new HybridVsidsPicker(0.1f))
                 .with(new TwoWatchedLiteralPropagator())
                 .with(new ClauseLearningWithUip());
 
@@ -41,18 +43,18 @@ public class Main {
         Assignment assignment = solver.solve(formula);
         Metrics.stopTimer(TOTAL);
 
-        Logger.log("\nAssignment =", assignment == null ? "UNSAT" : assignment);
+        Logger.log("\nAssignment =", assignment == null ? "UNSAT" : assignment.toMinisatString());
 
         Logger.log("\nTotal time:", Metrics.getElapsedTimeMillis(TOTAL), "ms");
         Logger.log("Unit propagation time:", Metrics.getElapsedTimeMillis(UNIT_PROPAGATION), "ms");
         Logger.log("Branch picking invocation count:", Metrics.getCounter(BRANCH_PICKING));
         Logger.log("Branch picking time:", Metrics.getElapsedTimeMillis(BRANCH_PICKING), "ms");
         Logger.log("Conflict analysis time:", Metrics.getElapsedTimeMillis(CONFLICT_ANALYSIS), "ms");
-        Logger.log("Final formula size:", formula.getClauseSize());
-
+        Logger.log("\nFinal formula size:", formula.getClauseSize());
 
         if (assignment != null) {
-            Logger.log("\nTest assignment:", formula.evaluate(assignment));
+            Formula originalFormula = FormulaHelper.parseFromFile(INPUT_FILE_PATH);
+            Logger.log("\nTest assignment:", Objects.requireNonNull(originalFormula).evaluate(assignment));
         }
 
     }

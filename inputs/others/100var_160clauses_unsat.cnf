@@ -1,4 +1,4 @@
-c FILE: aim-100-1_6-no-1.cnf
+c FILE: 100var_160clauses_unsat.cnf
 c
 c SOURCE: Kazuo Iwama, Eiji Miyano (miyano@cscu.kyushu-u.ac.jp),
 c          and Yuichi Asahiro
@@ -8,6 +8,15 @@ c              and more information in sat/contributed/iwama.
 c
 c NOTE: Not Satisfiable
 c
+
+c Total time: 38226 ms
+c Unit propagation time: 33295 ms
+c Branch picking invocation count: 30714
+c Branch picking time: 769 ms
+c Conflict analysis time: 3208 ms
+
+c Final formula size: 26482
+
 p cnf 100 160
 16 30 95 0
 -16 30 95 0
