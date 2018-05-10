@@ -2,10 +2,7 @@ package com.kentnek.cdcl.model;
 
 import com.kentnek.cdcl.Logger;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
+import java.util.*;
 
 /**
  * Represents a CNF formula, which is a conjunction over clauses: c_1 ∧ c_2 ∧ ... c_n.
@@ -21,6 +18,9 @@ public class Formula implements Iterable<Clause> {
     private final int variableCount;
     private final LinkedHashMap<Integer, Clause> clauses;
 
+    // If this formula is unsatisfiable, we store the final empty clause for proof generation
+    private Clause bottomClause = null;
+
     private int clauseId = 0;
 
     public Formula(int variableCount) {
@@ -33,8 +33,8 @@ public class Formula implements Iterable<Clause> {
         return variableCount;
     }
 
-    public Clause getClause(int i) {
-        return clauses.get(i);
+    public Clause getClause(int id) {
+        return clauses.get(id);
     }
 
     public int getClauseSize() {
@@ -42,17 +42,30 @@ public class Formula implements Iterable<Clause> {
     }
 
     public void add(Clause clause) {
-        add(clause, false);
-    }
-
-    public void add(Clause clause, boolean isLearning) {
         clause.id = clauseId++;
         clauses.put(clause.id, clause);
-        if (isLearning) listeners.forEach(l -> l.learn(clause));
+    }
+
+    /**
+     * Learning a clause adds it to the formula, and notifies the listeners as well.
+     */
+    public void learn(Clause clause) {
+        add(clause);
+        listeners.forEach(l -> l.learn(clause));
     }
 
     public void remove(Clause clause) {
         clauses.remove(clause.getId());
+    }
+
+    public Clause getBottomClause() {
+        return bottomClause;
+    }
+
+    public void setBottomClause(Clause bottomClause) {
+        assert (this.bottomClause == null && bottomClause.isEmpty());
+        this.add(bottomClause);
+        this.bottomClause = bottomClause;
     }
 
     //region Listener
@@ -91,9 +104,10 @@ public class Formula implements Iterable<Clause> {
     public String toString() {
         StringBuilder builder = new StringBuilder();
 
-        for (int i = 0; i < clauses.size(); i++) {
-            builder.append(clauses.get(i).toString());
-            if (i < clauses.size() - 1) builder.append(" ∧ ");
+        int i = 0;
+        for (Clause clause : clauses.values()) {
+            builder.append(clause.toString());
+            if (i++ < clauses.size() - 1) builder.append(" ∧ ");
         }
 
         return builder.toString();

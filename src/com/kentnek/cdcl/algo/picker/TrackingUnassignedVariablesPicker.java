@@ -16,12 +16,11 @@ import java.util.Set;
 
 public abstract class TrackingUnassignedVariablesPicker implements BranchPicker, Assignment.Listener {
 
-    protected int variableCount;
-    protected final Set<Integer> unassignedVariables = new HashSet<>();
+    final Set<Integer> unassignedVariables = new HashSet<>();
 
     @Override
     public void init(Formula formula, Assignment assignment) {
-        variableCount = formula.getVariableCount();
+        int variableCount = formula.getVariableCount();
 
         unassignedVariables.clear();
         for (int i = 1; i <= variableCount; i++) {

@@ -1,12 +1,16 @@
 package com.kentnek.cdcl.algo.picker;
 
+import com.kentnek.cdcl.Loggable;
 import com.kentnek.cdcl.Logger;
 import com.kentnek.cdcl.model.Assignment;
 import com.kentnek.cdcl.model.Clause;
 import com.kentnek.cdcl.model.Formula;
 import com.kentnek.cdcl.model.Literal;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 /**
@@ -19,7 +23,7 @@ import java.util.stream.Collectors;
  * @see <a href="https://www.princeton.edu/~chaff/publication/DAC2001v56.pdf"/>
  */
 
-public class VsidsPicker implements BranchPicker, Formula.Listener {
+public class VsidsPicker extends Loggable implements BranchPicker, Formula.Listener {
     private final Random rand = new Random();
 
     private LinkedHashMap<Integer, Integer> scores;
@@ -57,7 +61,7 @@ public class VsidsPicker implements BranchPicker, Formula.Listener {
 
         // Initialize the counter maps for all polarities.
         formula.forEach(c -> c.forEach(this::incrementCount));
-        Logger.debug("Initial score map:", scores);
+        if (debug) Logger.debug("Initial score map:", scores);
     }
 
 
@@ -96,13 +100,13 @@ public class VsidsPicker implements BranchPicker, Formula.Listener {
     public void learn(Clause learnedClause) {
         // Increment score for each literal in the learned clause.
         learnedClause.forEach(this::incrementCount);
-        Logger.debug("Current score map:", scores);
+        if (debug) Logger.debug("Current score map:", scores);
 
         learningCount = (learningCount + 1) % decayPeriod;
 
         if (learningCount == 0) { // We reach the decay period
             scores.replaceAll((k, v) -> (int) (v * decayAmount));
-            Logger.debug("Score map after decay:", scores);
+            if (debug) Logger.debug("Score map after decay:", scores);
         }
     }
 

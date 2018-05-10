@@ -1,0 +1,6 @@
+c Simple formula with 2 variables, whose unsatisfiability can be found by
+c initial propagation.
+p cnf 2 3
+1 0
+-1 2 0
+-2 0

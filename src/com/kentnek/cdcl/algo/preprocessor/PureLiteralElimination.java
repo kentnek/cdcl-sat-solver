@@ -55,10 +55,10 @@ public class PureLiteralElimination implements FormulaPreprocessor {
         for (int v = 1; v <= formula.getVariableCount(); v++) {
             LiteralType type = types[v];
             if (type == LiteralType.POSITIVE) {
-                assignment.add(v, true, -1);
+                assignment.add(v, true, Assignment.NIL);
                 pureLiterals.add(new Literal(v));
             } else if (type == LiteralType.NEGATIVE) {
-                assignment.add(v, false, -1);
+                assignment.add(v, false, Assignment.NIL);
                 pureLiterals.add(new Literal(-v));
             }
         }

@@ -1,9 +1,14 @@
 package com.kentnek.cdcl.algo.analyzer;
 
+import com.kentnek.cdcl.Loggable;
+import com.kentnek.cdcl.Logger;
 import com.kentnek.cdcl.model.Assignment;
 import com.kentnek.cdcl.model.Clause;
 import com.kentnek.cdcl.model.Formula;
-import com.kentnek.cdcl.model.Literal;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.kentnek.cdcl.model.Assignment.NIL;
 
@@ -14,9 +19,10 @@ import static com.kentnek.cdcl.model.Assignment.NIL;
  * @author kentnek
  */
 
-public class ClauseLearningWithUip implements ConflictAnalyzer {
+public class ClauseLearningWithUip extends Loggable implements ConflictAnalyzer {
 
     private boolean stopLearningAtUIP = true;
+    private boolean tracing = false;
 
     public ClauseLearningWithUip() {
     }
@@ -26,70 +32,80 @@ public class ClauseLearningWithUip implements ConflictAnalyzer {
     }
 
     @Override
+    public ClauseLearningWithUip debug() {
+        return (ClauseLearningWithUip) super.debug();
+    }
+
+    @Override
+    public void setTracing(boolean tracing) {
+        this.tracing = tracing;
+    }
+
+    @Override
     public Clause analyze(Formula formula, Assignment assignment) {
         assert (assignment.getKappaAntecedent() != NIL);
 
         int conflictingDecisionLevel = assignment.getCurrentDecisionLevel();
 
-        // omega
+        // first, set omega to clause at kappa
         Clause learnedClause = formula.getClause(assignment.getKappaAntecedent()).copy();
 
+        // analysis stops when omega is constant
         Clause prevLearnedClause = null;
+
+        // we also need to keep track of clauses used in resolution to produce the final learned clause
+        List<Integer> trace = new ArrayList<>();
+        if (tracing) trace.add(assignment.getKappaAntecedent());
 
         while (!learnedClause.equals(prevLearnedClause)) {
             // sigma = number of literals in omega assigned at current decision level
             int levelLiteralCount = 0;
+
             Clause clauseToResolve = null;
 
-            for (Literal literal : learnedClause) {
-                Assignment.SingleAssignment single = assignment.getSingle(literal);
+            List<Assignment.SingleAssignment> sortedSingles = learnedClause.stream()
+                    .map(assignment::getSingle)
+                    .sorted((s1, s2) -> Integer.compare(s2.order, s1.order))
+                    .collect(Collectors.toList());
 
+            // for all literals in the learned clause
+            for (Assignment.SingleAssignment single : sortedSingles) {
+                // the the assignment params for this literal
+
+                // if we're on the same decision level...
                 if (single.decisionLevel == conflictingDecisionLevel) {
                     levelLiteralCount++;
 
-                    // Choose this literal to resolve with omega
-                    if (clauseToResolve == null && single.antecedent != NIL) {
-                        clauseToResolve = formula.getClause(single.antecedent);
+                    int antecedent = single.antecedent;
+
+                    // ...choose this literal's antecedent to resolve with omega
+                    if (clauseToResolve == null && antecedent != NIL) {
+                        clauseToResolve = formula.getClause(antecedent);
                     }
                 }
             }
 
 
+            // if there's only one literal in omega at conflict level (UIP)
+            // or no more literal to resolve
             if ((stopLearningAtUIP && levelLiteralCount == 1 && conflictingDecisionLevel != 0) || clauseToResolve == null) {
-                // Stop resolving upon UIP (only one literal in omega at conflict level) or no more literal to resolve.
+                // ... stop resolving
                 break;
             } else {
                 prevLearnedClause = learnedClause;
-                learnedClause = resolve(learnedClause, clauseToResolve);
+                learnedClause = learnedClause.resolve(clauseToResolve);
+                if (tracing) trace.add(clauseToResolve.getId());
+                if (debug) {
+                    Logger.debug(String.format(
+                            ">> Resolving with clause %d %s => %s",
+                            clauseToResolve.getId(), clauseToResolve, learnedClause
+                    ));
+                }
             }
         }
 
+        if (tracing) learnedClause.setTrace(trace);
         return learnedClause;
-    }
-
-    /**
-     * Performs resolution between two clauses w1 and w2.
-     * <p>
-     * For every variable x such that one clause contains x and the other has -x, the resulting clause contains all
-     * literals off w1 and w2 with the exception of x and -x.
-     *
-     * @param w1 clause w1
-     * @param w2 clause w2
-     * @return a new clause which is the result of the resolution between w1 and w2.
-     */
-    private Clause resolve(Clause w1, Clause w2) {
-        Clause result = w1.copy();
-
-        for (Literal literal : w2) {
-            if (result.contains(literal.negate())) {
-                // if w2 contains x and w1 contains -x then remove -x from the result
-                result.remove(literal.negate());
-            } else if (!result.contains(literal)) {
-                result.add(literal);
-            }
-        }
-
-        return result;
     }
 
 }

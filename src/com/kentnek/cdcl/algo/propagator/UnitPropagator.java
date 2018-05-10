@@ -18,7 +18,7 @@ public interface UnitPropagator extends GenericListener{
      *
      * @param formula    the formula to perform unit propagation on.
      * @param assignment the current assignment for the formula.
-     * @return true if no conflict is found, false otherwise.
+     * @return true if a conflict is found, false otherwise.
      */
     boolean propagate(Formula formula, Assignment assignment);
 }

@@ -2,10 +2,7 @@ package com.kentnek.cdcl.model;
 
 import com.kentnek.cdcl.Logger;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -21,6 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class Assignment implements Iterable<Assignment.SingleAssignment> {
     public static final int NIL = -1;
     private final int variableCount;
+    private int assignmentOrder;
 
     /**
      * Maps variables (>0) to their assigned values (true and false). This map does not store unassigned variables.
@@ -35,12 +33,14 @@ public class Assignment implements Iterable<Assignment.SingleAssignment> {
         public final boolean value;
         public final int decisionLevel;
         public final int antecedent;
+        public final int order;
 
-        public SingleAssignment(int variable, boolean value, int decisionLevel, int antecedent) {
+        public SingleAssignment(int variable, boolean value, int decisionLevel, int antecedent, int order) {
             this.variable = variable;
             this.value = value;
             this.decisionLevel = decisionLevel;
             this.antecedent = antecedent;
+            this.order = order;
         }
     }
 
@@ -48,6 +48,7 @@ public class Assignment implements Iterable<Assignment.SingleAssignment> {
         this.variableCount = variableCount;
         this.kappaAntecedent = NIL;
         this.currentDecisionLevel = 0;
+        this.assignmentOrder = 0;
     }
 
     public int getVariableCount() {
@@ -103,6 +104,10 @@ public class Assignment implements Iterable<Assignment.SingleAssignment> {
         this.currentDecisionLevel++;
     }
 
+    public boolean isSatisfiable() {
+        return getKappaAntecedent() == NIL;
+    }
+
     //endregion
 
 
@@ -117,16 +122,22 @@ public class Assignment implements Iterable<Assignment.SingleAssignment> {
         return map.containsKey(variable);
     }
 
-    public void add(int variable, boolean value, int antecedent) {
-        add(new SingleAssignment(variable, value, this.getCurrentDecisionLevel(), antecedent));
-    }
+    public void add(int variable, boolean value, int antecedent, int decisionLevel) {
+        checkVariable(variable);
 
-    public void add(SingleAssignment single) {
-        checkVariable(single.variable);
+        SingleAssignment single = new SingleAssignment(
+                variable, value, decisionLevel, antecedent, assignmentOrder
+        );
+
+        this.assignmentOrder++;
 
         map.put(single.variable, single);
-
         listeners.forEach(l -> l.add(single.variable, single.value, single.antecedent));
+    }
+
+    public void add(int variable, boolean value, int antecedent) {
+        int level = this.getCurrentDecisionLevel();
+        add(variable, value, antecedent, level);
     }
 
     public void remove(int variable) {
@@ -200,7 +211,7 @@ public class Assignment implements Iterable<Assignment.SingleAssignment> {
                 .append(" ")
         );
 
-        return builder.append(0).toString();
+        return builder.toString();
     }
 
     public String toStringFull() {
@@ -212,7 +223,7 @@ public class Assignment implements Iterable<Assignment.SingleAssignment> {
                 (var, single) -> {
                     builder.append(single.value ? "" : "¬").append("x").append(var)
                             .append("@").append(single.decisionLevel);
-                    if (single.antecedent != NIL) builder.append(" (w").append(single.antecedent + 1).append(")");
+                    if (single.antecedent != NIL) builder.append(" (w").append(single.antecedent).append(")");
                     builder.append(", ");
                 }
         );

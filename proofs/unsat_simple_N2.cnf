@@ -1,0 +1,16 @@
+# Proof for 'unsat_simple_N2.cnf':
+v 7
+
+1 1 2 0
+2 1 -2 0
+3 -1 -2 0
+4 -1 2 0
+
+5 -1 0
+6 0
+7 1 0
+
+# Resolutions:
+3 4 5
+1 2 7
+5 7 6

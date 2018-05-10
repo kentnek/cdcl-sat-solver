@@ -11,7 +11,7 @@ public class VariableValue {
     public final int variable;
     public final boolean value;
 
-    public VariableValue(int variable, boolean value) {
+    VariableValue(int variable, boolean value) {
         assert (variable > 0);
         this.variable = variable;
         this.value = value;

@@ -1,5 +1,6 @@
 package com.kentnek.cdcl.algo.propagator;
 
+import com.kentnek.cdcl.Logger;
 import com.kentnek.cdcl.model.*;
 
 /**
@@ -40,9 +41,11 @@ public class NaiveUnitPropagator implements UnitPropagator {
 
                 // all literals are false, which is a conflict
                 if (undefinedCount == 0) {
+                    Logger.debug("Conflict at clause", clause.getId());
                     assignment.setKappaAntecedent(clause.getId());
-                    return false;
+                    return true;
                 } else if (undefinedCount == 1) {
+                    Logger.debug("Propagate:", unitLiteral, "from clause", clause);
                     hasUnitClause = true;
                     assignment.add(unitLiteral.variable, !unitLiteral.isNegated, clause.getId());
                 }
@@ -51,6 +54,6 @@ public class NaiveUnitPropagator implements UnitPropagator {
             // Loop until there is no more unit clause left
         } while (hasUnitClause);
 
-        return true;
+        return false;
     }
 }

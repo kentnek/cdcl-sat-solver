@@ -1,6 +1,7 @@
 package com.kentnek.cdcl.model;
 
 import java.util.*;
+import java.util.stream.Stream;
 
 /**
  * A clause is a disjunction over a list of literals: x_1 v x_2 v ... x_n.
@@ -12,18 +13,24 @@ import java.util.*;
 public class Clause implements Iterable<Literal> {
     int id;
     private final int variableCount;
-    private final LinkedHashSet<Literal> literals;
+    protected final LinkedHashSet<Literal> literals;
+    private List<Integer> trace; // list of clause id used in resolution to produce this clause, if it's learned.
 
     public Clause(int variableCount) {
-        this(variableCount, new LinkedHashSet<>());
+        this(variableCount, new LinkedHashSet<>(), null);
     }
 
     public Clause(int variableCount, LinkedHashSet<Literal> literals) {
+        this(variableCount, literals, null);
+    }
+
+    public Clause(int variableCount, LinkedHashSet<Literal> literals, List<Integer> trace) {
         assert (variableCount > 0);
 
         this.id = -1;
         this.variableCount = variableCount;
         this.literals = literals;
+        this.trace = trace;
     }
 
     public int getId() {
@@ -34,9 +41,23 @@ public class Clause implements Iterable<Literal> {
         return variableCount;
     }
 
+    public List<Integer> getTrace() {
+        return trace;
+    }
+
+    public void setTrace(List<Integer> trace) {
+        assert (this.trace == null); // only set once
+        this.trace = trace;
+    }
 
     public Clause copy() {
-        return new Clause(this.variableCount, new LinkedHashSet<>(this.literals));
+        return new Clause(this.variableCount, new LinkedHashSet<>(this.literals), this.getTrace());
+    }
+
+    public Clause copy(int newId) {
+        Clause copied = copy();
+        copied.id = newId;
+        return copied;
     }
 
     //region Literal access
@@ -68,6 +89,30 @@ public class Clause implements Iterable<Literal> {
 
     //endregion
 
+    /**
+     * Performs resolution between this and another clause.
+     * <p>
+     * For every variable x such that one clause contains x and the other has -x, the resulting clause contains all
+     * literals off w1 and w2 with the exception of x and -x.
+     *
+     * @param other clause to resolve with
+     * @return a new clause which is the result of the resolution between the two clauses.
+     */
+    public Clause resolve(Clause other) {
+        Clause result = this.copy();
+
+        for (Literal literal : other) {
+            if (result.contains(literal.negate())) {
+                // if w2 contains x and w1 contains -x then remove -x from the result
+                result.remove(literal.negate());
+            } else if (!result.contains(literal)) {
+                result.add(literal);
+            }
+        }
+
+        return result;
+    }
+
 
     public Logic evaluate(Assignment assignment) {
         Logic result = Logic.UNDEFINED;
@@ -96,6 +141,18 @@ public class Clause implements Iterable<Literal> {
         return builder.toString();
     }
 
+    public String toSimpleString() {
+        if (literals.isEmpty()) return "0";
+
+        StringBuilder builder = new StringBuilder();
+
+        literals.forEach(
+                literal -> builder.append(literal.toLiteralNum()).append(" ")
+        );
+
+        return builder.append("0").toString().trim();
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof Clause) {
@@ -113,5 +170,9 @@ public class Clause implements Iterable<Literal> {
     @Override
     public Iterator<Literal> iterator() {
         return this.literals.iterator();
+    }
+
+    public Stream<Literal> stream() {
+        return this.literals.stream();
     }
 }

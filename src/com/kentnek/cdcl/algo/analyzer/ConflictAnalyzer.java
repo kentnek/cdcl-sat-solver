@@ -20,4 +20,6 @@ public interface ConflictAnalyzer {
      * @return a new {@link Clause} that has been learned from the analysis.
      */
     Clause analyze(Formula formula, Assignment assignment);
+
+    void setTracing(boolean tracing);
 }

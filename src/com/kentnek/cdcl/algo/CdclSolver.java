@@ -3,17 +3,14 @@ package com.kentnek.cdcl.algo;
 import com.kentnek.cdcl.Logger;
 import com.kentnek.cdcl.Metrics;
 import com.kentnek.cdcl.algo.analyzer.ConflictAnalyzer;
+import com.kentnek.cdcl.algo.picker.BootstrapPicker;
 import com.kentnek.cdcl.algo.picker.BranchPicker;
 import com.kentnek.cdcl.algo.picker.VariableValue;
 import com.kentnek.cdcl.algo.preprocessor.FormulaPreprocessor;
 import com.kentnek.cdcl.algo.propagator.UnitPropagator;
 import com.kentnek.cdcl.model.*;
 
-import java.util.Random;
-
-import static com.kentnek.cdcl.Metrics.Key.BRANCH_PICKING;
-import static com.kentnek.cdcl.Metrics.Key.CONFLICT_ANALYSIS;
-import static com.kentnek.cdcl.Metrics.Key.UNIT_PROPAGATION;
+import static com.kentnek.cdcl.Metrics.Key.*;
 import static com.kentnek.cdcl.model.Assignment.NIL;
 
 /**
@@ -29,6 +26,9 @@ public class CdclSolver implements SatSolver {
     private BranchPicker branchPicker;
     private ConflictAnalyzer conflictAnalyzer;
     private UnitPropagator unitPropagator;
+
+    // Enables resolution tracing for refutation proof generation.
+    private boolean tracing = false;
 
     public CdclSolver with(FormulaPreprocessor preprocessor) {
         this.formulaPreprocessor = preprocessor;
@@ -50,10 +50,21 @@ public class CdclSolver implements SatSolver {
         return this;
     }
 
+    public CdclSolver withTracing(boolean tracing) {
+        this.tracing = tracing;
+        return this;
+    }
+
+    public CdclSolver bootstrap(int... assignments) {
+        assert (branchPicker != null);
+        this.branchPicker = new BootstrapPicker(branchPicker, assignments);
+        return this;
+    }
+
     private void registerListener(Formula formula, Assignment assignment, GenericListener listener) {
-        listener.init(formula, assignment);
         formula.register(listener);
         assignment.register(listener);
+        listener.init(formula, assignment);
     }
 
     @Override
@@ -63,50 +74,50 @@ public class CdclSolver implements SatSolver {
             throw new IllegalArgumentException("'branchPicker', 'conflictAnalyzer' and 'unitPropagator' must be not null.");
         }
 
+        this.conflictAnalyzer.setTracing(this.tracing);
+
         Assignment assignment = new Assignment(formula.getVariableCount());
         preprocessFormula(formula, assignment);
 
         // Try unit propagation once to detect top-level conflicts,
         // returns null assignment if there is any.
-        if (!timedUnitPropagation(formula, assignment)) return null;
+        if (timedUnitPropagation(formula, assignment)) {
+            if (!tracing) return null;
 
-        long budget = 100;
-        int conflictCount = 0;
-
-        Random rand = new Random();
-        rand.setSeed(System.nanoTime());
+            Clause bottomClause = timedConflictAnalysis(formula, assignment);
+            formula.setBottomClause(bottomClause);
+            return assignment;
+        }
 
         // Loop until the assignment is complete.
         while (!assignment.isComplete()) {
-
+            // Choose a branch
             VariableValue branchVar = timedBranchPicker(assignment);
 
             assignment.incrementDecisionLevel();
             assignment.add(branchVar.variable, branchVar.value, NIL);
 
-            // Loop until there's no more conflict.
-            while (!timedUnitPropagation(formula, assignment)) {
-                conflictCount++;
+            // Loop as long as there's conflict
+            while (timedUnitPropagation(formula, assignment)) {
                 Clause learnedClause = timedConflictAnalysis(formula, assignment);
 
                 int newDecisionLevel = determineDecisionLevel(assignment, learnedClause);
 
-                if (newDecisionLevel < 0) return null;
+                // unsatisfiable, return the assignment with non-null kappa
+                if (newDecisionLevel < 0) {
+                    if (!tracing) return null;
 
-                if (conflictCount >= budget) {
-                    conflictCount = 0;
-                    budget *= 1.5;
-                    Logger.log("Restarted, budget = ", budget);
-                    backtrack(assignment, 0);
-                    branchPicker.init(formula, assignment);
-                    break;
+                    formula.setBottomClause(learnedClause);
+                    return assignment;
                 }
 
                 backtrack(assignment, newDecisionLevel);
 
-                if (rand.nextFloat() > 0.3f) formula.add(learnedClause, true);
+                // If the learned clause has trace of size 1, it must be the previous kappa clause,
+                // so we don't need to learn it
+                if (learnedClause.getTrace().size() > 1) formula.learn(learnedClause);
+                Logger.debug("");
             }
-
 
         }
 
@@ -162,6 +173,11 @@ public class CdclSolver implements SatSolver {
         return ret;
     }
 
+    /**
+     * Find the new decision level from the learned clause.
+     *
+     * @return the new decision level to backtrack to.
+     */
     private int determineDecisionLevel(Assignment assignment, Clause learnedClause) {
         // Learned clause is empty, which means a contradiction
         if (learnedClause.isEmpty()) return -1;
@@ -169,22 +185,24 @@ public class CdclSolver implements SatSolver {
         int conflictingLevel = assignment.getCurrentDecisionLevel();
         int newDecisionLevel = 0;
 
-        // Find the 2nd highest decision level among the clause's literals (i.e. maximum level before the
-        // conflicting level)
+        // Find the 2nd highest decision level among the clause's literals
+        // (i.e. maximum level before the conflicting level)
         for (Literal literal : learnedClause) {
             int literalLevel = assignment.getSingle(literal).decisionLevel;
 
             if (literalLevel < conflictingLevel) newDecisionLevel = Math.max(newDecisionLevel, literalLevel);
         }
 
+        // Note: if all literals are on the same level with the conflicting level
+        // the newDecisionLevel is 0 by convention
+
         return newDecisionLevel;
     }
 
     /**
-     * Derives the decision level from the learned clause, and backtracks to it.
+     * Performs backtracking on a conflicting assignment.
      *
      * @param assignment the current conflicting assignment.
-     * @return the new decision level to backtrack to.
      */
     private void backtrack(Assignment assignment, int newDecisionLevel) {
         // Removes all existing assignments whose decision level is later than our backtrack point.

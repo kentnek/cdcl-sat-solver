@@ -1,0 +1,13 @@
+# Proof for 'unsat_simple_N2_prop.cnf':
+v 5
+
+1 1 0
+2 -1 2 0
+3 -2 0
+
+4 -1 0
+5 0
+
+# Resolutions:
+2 3 4
+1 4 5

@@ -1,5 +1,6 @@
 package com.kentnek.cdcl.algo.propagator;
 
+import com.kentnek.cdcl.Loggable;
 import com.kentnek.cdcl.Logger;
 import com.kentnek.cdcl.model.*;
 
@@ -14,7 +15,8 @@ import java.util.*;
  * @see <a href="http://people.mpi-inf.mpg.de/~mfleury/sat_twl.pdf"/>
  */
 
-public class TwoWatchedLiteralPropagator implements UnitPropagator, Assignment.Listener, Formula.Listener {
+public class TwoWatchedLiteralPropagator extends Loggable
+        implements UnitPropagator, Assignment.Listener, Formula.Listener {
 
     // Stores the two literals being watched of a clause
     private class LiteralPair {
@@ -53,24 +55,30 @@ public class TwoWatchedLiteralPropagator implements UnitPropagator, Assignment.L
 
     @Override
     public void init(Formula formula, Assignment assignment) {
+        // decision level must be zero at the beginning
+        assert (assignment.getCurrentDecisionLevel() == 0);
+
         watchLists = new HashMap<>();
         watchedPairs = new HashMap<>();
         literalsToPropagate = new LinkedList<>();
 
-        // First, attempt to find and assign all unit clause.
+        // First, we watch all clauses with >= 2 literals
         formula.forEach(clause -> {
-            if (clause.getLiteralSize() == 1) {
-                Literal unit = clause.get(0);
-                assignment.add(new Assignment.SingleAssignment(
-                        unit.variable, !unit.isNegated, 0, clause.getId()
-                ));
-            } else {
+            if (clause.getLiteralSize() >= 2) {
                 // if not a unit clause, we find two watched literals.
                 this.addClause(clause);
             }
         });
 
-        Logger.debug("Initial watched pairs: ", watchedPairs);
+        // Then, attempt to find and assign all unit clause.
+        formula.forEach(clause -> {
+            if (clause.getLiteralSize() == 1) {
+                Literal unit = clause.get(0);
+                assignment.add(unit.variable, !unit.isNegated, clause.getId());
+            }
+        });
+
+        if (debug) Logger.debug("Initial watched pairs: ", watchedPairs);
     }
 
     /**
@@ -95,7 +103,7 @@ public class TwoWatchedLiteralPropagator implements UnitPropagator, Assignment.L
 
 
     // Given a clause and a watched literal, return the other watched literal
-    public int findOtherWatchedLiteral(int clauseId, int literal) {
+    private int findOtherWatchedLiteral(int clauseId, int literal) {
         LiteralPair watching = watchedPairs.get(clauseId);
         return literal != watching.first ? watching.first : watching.second;
     }
@@ -106,7 +114,7 @@ public class TwoWatchedLiteralPropagator implements UnitPropagator, Assignment.L
         // their values.
         addClause(clause);
         recentlyLearnedClause = clause;
-        Logger.debug("New watched pairs after learning:", watchedPairs);
+        if (debug) Logger.debug("New watched pairs after learning:", watchedPairs);
     }
 
     @Override
@@ -124,9 +132,9 @@ public class TwoWatchedLiteralPropagator implements UnitPropagator, Assignment.L
             // if it's a unit clause, just assign it right away.
             if (recentlyLearnedClause.getLiteralSize() == 1) {
                 Literal unitLiteral = recentlyLearnedClause.get(0);
-                assignment.add(new Assignment.SingleAssignment(
-                        unitLiteral.variable, !unitLiteral.isNegated, 0, recentlyLearnedClause.getId()
-                ));
+                assignment.add(
+                        unitLiteral.variable, !unitLiteral.isNegated, recentlyLearnedClause.getId(), 0
+                );
             } else {
                 // since the newly added clause might be tracking false variables, we need to propagate them
                 // as necessary
@@ -142,10 +150,16 @@ public class TwoWatchedLiteralPropagator implements UnitPropagator, Assignment.L
             int falseLiteral = literalsToPropagate.pop();
 
             if (!watchLists.containsKey(falseLiteral)) continue;
-            Logger.debug("Considering falseLiteral:", falseLiteral, ", watchList =", watchLists.get(falseLiteral));
+
+            List<Integer> watchList = watchLists.get(falseLiteral);
+
+            if (debug) Logger.debug(
+                    "Considering falseLiteral:", falseLiteral,
+                    ", watchList =", watchList
+            );
 
             // iterate the watch list for -L
-            ListIterator<Integer> clauseCandidates = watchLists.get(falseLiteral).listIterator();
+            ListIterator<Integer> clauseCandidates = watchList.listIterator();
 
             while (clauseCandidates.hasNext()) {
                 int clauseId = clauseCandidates.next();
@@ -157,7 +171,7 @@ public class TwoWatchedLiteralPropagator implements UnitPropagator, Assignment.L
                 // 1. If the other watched literal is true, do nothing.
                 if (otherLiteralValue == Logic.TRUE) continue;
 
-                // 2. If one of the unwatched literals L is not false, restore
+                // 2. If one of the unwatched literals L' is not false, restore
                 // the invariant by updating the clause so that it watches L'
                 // instead of −L.
                 Clause currentClause = formula.getClause(clauseId);
@@ -171,10 +185,16 @@ public class TwoWatchedLiteralPropagator implements UnitPropagator, Assignment.L
 
                         hasUpdatedWatch = true;
 
-                        // replace falseLiteral with unwatchedNum
-                        watchedPairs.get(clauseId).replace(falseLiteral, unwatchedNum);
+                        LiteralPair pair = watchedPairs.get(clauseId);
+                        String oldPair = "";
+                        if (debug) oldPair = pair.toString();
 
-                        Logger.debug(String.format("New pair for clause %d = %s", clauseId, watchedPairs.get(clauseId)));
+                        // replace falseLiteral with unwatchedNum
+                        pair.replace(falseLiteral, unwatchedNum);
+
+                        if (debug) Logger.debug((
+                                String.format("clause %d, pair = %s => %s", clauseId, oldPair, pair)
+                        ));
 
                         // remove the clause from the watchList for falseLiteral
                         clauseCandidates.remove();
@@ -189,22 +209,24 @@ public class TwoWatchedLiteralPropagator implements UnitPropagator, Assignment.L
                 if (!hasUpdatedWatch) {
                     if (otherLiteralValue == Logic.UNDEFINED) {
                         // 3.1. If it is not set, propagate L′
-                        Logger.debug("Propagate:", otherLiteral);
+                        Logger.debug("Propagate:", otherLiteral, "from clause", clauseId);
                         assignment.add(otherLiteral.variable, !otherLiteral.isNegated, clauseId);
                     } else {
                         // 3.2. Otherwise, L' is false, and we have found a conflict.
-                        Logger.debug("UCP: Conflict at clause", clauseId);
+                        Logger.debug("Conflict at clause", clauseId);
                         assignment.setKappaAntecedent(clauseId);
                         literalsToPropagate.clear();
-                        return false;
+                        return true;
                     }
                 }
             }
-
-            Logger.debug("UCP: watched pairs after considering", falseLiteral, "=", watchedPairs);
         }
 
-        return true;
+        return false;
     }
 
+    @Override
+    public TwoWatchedLiteralPropagator debug() {
+        return (TwoWatchedLiteralPropagator) super.debug();
+    }
 }

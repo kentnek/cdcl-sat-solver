@@ -1,7 +1,7 @@
 package com.kentnek.cdcl.model;
 
 /**
- * [Description]
+ * Base interface for listeners.
  * <p>
  *
  * @author kentnek

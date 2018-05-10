@@ -14,6 +14,16 @@ c Conflict analysis time: 9490 ms
 
 c Final formula size: 56266
 
+c Improvement:
+
+c Total time: 17472 ms
+c Unit propagation time: 14101 ms
+c Branch picking invocation count: 40916
+c Branch picking time: 1066 ms
+c Conflict analysis time: 1423 ms
+
+c Final formula size: 23073
+
 p cnf 200 1000
 1 -21 167 0
 32 -133 185 0
