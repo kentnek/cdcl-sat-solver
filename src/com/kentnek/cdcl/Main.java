@@ -19,7 +19,7 @@ import static com.kentnek.cdcl.Metrics.Key.*;
 
 public class Main {
 
-    private static final String INPUT_FILE_PATH = "generated/N150_K3_L650_unsat_hard.cnf";
+    private static final String INPUT_FILE_PATH = "simple/unsat_simple_N3.cnf";
 
     private static boolean shouldGenerateProof;
 
@@ -89,8 +89,8 @@ public class Main {
     private static void proveAndVerify(Formula formula, Path inputPath) {
         UnsatProver prover = new UnsatProver(formula);
         Proof proof = prover.prove()
-                .expandResolutions();
-        //.renumberClauses();
+                .expandResolutions()
+                .renumberClauses();
 
         if (proof.clauses.size() <= 20) {
             Logger.log("\n" + proof);
