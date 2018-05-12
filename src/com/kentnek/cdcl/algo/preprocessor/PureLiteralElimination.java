@@ -45,7 +45,7 @@ public class PureLiteralElimination implements FormulaPreprocessor {
         // Resolve the polarities
         formula.forEach(c -> c.forEach(l ->
                 types.compute(l.variable, (k, v) ->
-                        (v == null) ? LiteralType.UNKNOWN : v.resolve(l)
+                        (v == null ? LiteralType.UNKNOWN : v).resolve(l)
                 )
         ));
 
