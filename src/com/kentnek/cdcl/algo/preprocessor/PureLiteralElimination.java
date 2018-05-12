@@ -6,10 +6,7 @@ import com.kentnek.cdcl.model.Clause;
 import com.kentnek.cdcl.model.Formula;
 import com.kentnek.cdcl.model.Literal;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
+import java.util.*;
 
 /**
  * This preprocessor determines the polarity of each variable in the formula, and prunes those that are pure.
@@ -43,17 +40,20 @@ public class PureLiteralElimination implements FormulaPreprocessor {
     public void preprocess(Formula formula, Assignment assignment) {
         Logger.log("\nOriginal clause count =", formula.getClauseSize());
 
-        LiteralType[] types = new LiteralType[formula.getVariableCount() + 1];
-        Arrays.fill(types, LiteralType.UNKNOWN);
+        Map<Integer, LiteralType> types = new HashMap<>();
 
         // Resolve the polarities
-        formula.forEach(c -> c.forEach(l -> types[l.variable] = types[l.variable].resolve(l)));
+        formula.forEach(c -> c.forEach(l ->
+                types.compute(l.variable, (k, v) ->
+                        (v == null) ? LiteralType.UNKNOWN : v.resolve(l)
+                )
+        ));
 
         Set<Literal> pureLiterals = new HashSet<>();
 
         // assign values to pure literals
         for (int v = 1; v <= formula.getVariableCount(); v++) {
-            LiteralType type = types[v];
+            LiteralType type = types.get(v);
             if (type == LiteralType.POSITIVE) {
                 assignment.add(v, true, Assignment.NIL);
                 pureLiterals.add(new Literal(v));
