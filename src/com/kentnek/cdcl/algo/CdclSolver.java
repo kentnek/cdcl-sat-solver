@@ -102,16 +102,15 @@ public class CdclSolver implements SatSolver {
                 Logger.debug("");
             }
 
+            // If the assignment is complete, exit
+            if (assignment.isComplete()) break;
+
             // When there's no more conflict, chooses a branch
             VariableValue branchVar = timedBranchPicker(assignment);
+            assignment.incrementDecisionLevel();
+            assignment.add(branchVar.variable, branchVar.value, NIL);
 
-            if (branchVar != null) {
-                assignment.incrementDecisionLevel();
-                assignment.add(branchVar.variable, branchVar.value, NIL);
-            }
-
-            // Loop until the assignment is complete.
-        } while (!assignment.isComplete());
+        } while (true);
 
         return assignment;
     }

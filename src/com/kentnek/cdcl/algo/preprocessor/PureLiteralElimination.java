@@ -52,7 +52,7 @@ public class PureLiteralElimination implements FormulaPreprocessor {
         Set<Literal> pureLiterals = new HashSet<>();
 
         // assign values to pure literals
-        for (int v = 1; v <= formula.getVariableCount(); v++) {
+        for (int v : types.keySet()) {
             LiteralType type = types.get(v);
             if (type == LiteralType.POSITIVE) {
                 assignment.add(v, true, Assignment.NIL);
