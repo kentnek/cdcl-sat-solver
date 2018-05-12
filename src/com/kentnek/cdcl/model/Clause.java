@@ -175,4 +175,5 @@ public class Clause implements Iterable<Literal> {
     public Stream<Literal> stream() {
         return this.literals.stream();
     }
+
 }

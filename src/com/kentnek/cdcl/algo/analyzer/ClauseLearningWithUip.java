@@ -63,6 +63,7 @@ public class ClauseLearningWithUip extends Loggable implements ConflictAnalyzer 
 
             Clause clauseToResolve = null;
 
+            // Sorts by descending order
             List<Assignment.SingleAssignment> sortedSingles = learnedClause.stream()
                     .map(assignment::getSingle)
                     .sorted((s1, s2) -> Integer.compare(s2.order, s1.order))
@@ -85,7 +86,6 @@ public class ClauseLearningWithUip extends Loggable implements ConflictAnalyzer 
                 }
             }
 
-
             // if there's only one literal in omega at conflict level (UIP)
             // or no more literal to resolve
             if ((stopLearningAtUIP && levelLiteralCount == 1 && conflictingDecisionLevel != 0) || clauseToResolve == null) {
@@ -107,5 +107,4 @@ public class ClauseLearningWithUip extends Loggable implements ConflictAnalyzer 
         if (tracing) learnedClause.setTrace(trace);
         return learnedClause;
     }
-
 }

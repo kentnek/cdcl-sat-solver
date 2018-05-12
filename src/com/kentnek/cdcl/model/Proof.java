@@ -205,12 +205,12 @@ public class Proof {
             builder.append("\n");
         }
 
-        builder.append("\nResolution:\n");
+        builder.append("\nResolutions:\n");
 
         for (Resolution resolution : resolutions) {
             int clauseId = resolution.output;
             Clause clause = clauses.get(clauseId);
-            if (!clause.isEmpty()) builder.append("w").append(clauseId + 1).append(" ");
+            /*if (!clause.isEmpty()) */builder.append("w").append(clauseId + 1).append(" ");
 
             builder.append(clause).append(" <- ")
                     .append(resolution.inputs.stream().map(s -> "w" + (s + 1)).collect(Collectors.toList()))

@@ -26,7 +26,7 @@ public class UnsatProver {
         assert (bottomClause != null);
 
         Proof proof = new Proof();
-        List<Integer> neededClauses = findNeededClauses();
+        List<Integer> neededClauses = findClausesForProof();
 
         // Since we might have ignore clauses in the formula that are not needed in the proof,
         // we need to remap the ids (counting from 0 onwards)
@@ -61,7 +61,7 @@ public class UnsatProver {
      *
      * @return a sorted list of clause id needed for the proof.
      */
-    private List<Integer> findNeededClauses() {
+    private List<Integer> findClausesForProof() {
         Set<Integer> visited = new HashSet<>();
 
         // The bottom clause is the last one in the proof

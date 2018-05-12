@@ -79,24 +79,9 @@ public class CdclSolver implements SatSolver {
         Assignment assignment = new Assignment(formula.getVariableCount());
         preprocessFormula(formula, assignment);
 
-        // Try unit propagation once to detect top-level conflicts,
+        // We use do...while loop to unit propagation once at first to detect top-level conflicts,
         // returns null assignment if there is any.
-        if (timedUnitPropagation(formula, assignment)) {
-            if (!tracing) return null;
-
-            Clause bottomClause = timedConflictAnalysis(formula, assignment);
-            formula.setBottomClause(bottomClause);
-            return assignment;
-        }
-
-        // Loop until the assignment is complete.
-        while (!assignment.isComplete()) {
-            // Choose a branch
-            VariableValue branchVar = timedBranchPicker(assignment);
-
-            assignment.incrementDecisionLevel();
-            assignment.add(branchVar.variable, branchVar.value, NIL);
-
+        do {
             // Loop as long as there's conflict
             while (timedUnitPropagation(formula, assignment)) {
                 Clause learnedClause = timedConflictAnalysis(formula, assignment);
@@ -105,10 +90,8 @@ public class CdclSolver implements SatSolver {
 
                 // unsatisfiable, return the assignment with non-null kappa
                 if (newDecisionLevel < 0) {
-                    if (!tracing) return null;
-
-                    formula.setBottomClause(learnedClause);
-                    return assignment;
+                    if (tracing) formula.setBottomClause(learnedClause);
+                    return null;
                 }
 
                 backtrack(assignment, newDecisionLevel);
@@ -119,7 +102,16 @@ public class CdclSolver implements SatSolver {
                 Logger.debug("");
             }
 
-        }
+            // When there's no more conflict, chooses a branch
+            VariableValue branchVar = timedBranchPicker(assignment);
+
+            if (branchVar != null) {
+                assignment.incrementDecisionLevel();
+                assignment.add(branchVar.variable, branchVar.value, NIL);
+            }
+
+            // Loop until the assignment is complete.
+        } while (!assignment.isComplete());
 
         return assignment;
     }
@@ -159,7 +151,7 @@ public class CdclSolver implements SatSolver {
         Clause ret = conflictAnalyzer.analyze(formula, assignment);
         Metrics.stopTimer(CONFLICT_ANALYSIS);
 
-        Logger.debug("Learned clause = " + ret);
+        Logger.debug(String.format("New learned clause %d = %s", formula.nextClauseId(), ret));
         return ret;
     }
 
@@ -169,7 +161,7 @@ public class CdclSolver implements SatSolver {
         Metrics.stopTimer(BRANCH_PICKING);
         Metrics.incrementCounter(BRANCH_PICKING);
 
-        Logger.debug("\n======\nPicked: " + ret);
+        Logger.debug(String.format("\n======\nLevel %d, Picked: %s", assignment.getCurrentDecisionLevel() + 1, ret));
         return ret;
     }
 

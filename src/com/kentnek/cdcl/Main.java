@@ -19,9 +19,9 @@ import static com.kentnek.cdcl.Metrics.Key.*;
 
 public class Main {
 
-    private static final String INPUT_FILE_PATH = "generated/N150_K3_L650_unsat.cnf";
+    private static final String INPUT_FILE_PATH = "generated/N200_K3_L1000_unsat.cnf";
 
-    private static boolean generateRefutationProof;
+    private static boolean shouldGenerateProof;
 
     // This will check if the Java Debug Wire Protocol agent is used.
     private static boolean isDebugMode = java.lang.management.ManagementFactory.getRuntimeMXBean().
@@ -30,7 +30,7 @@ public class Main {
     static {
         Logger.setShowDebug(isDebugMode);
         Metrics.setEnabled(true);
-        generateRefutationProof = true;
+        shouldGenerateProof = true;
     }
 
     public static void main(String[] args) {
@@ -52,13 +52,13 @@ public class Main {
                 .with(new HybridVsidsPicker(0.1f))
                 .with(new TwoWatchedLiteralPropagator())
                 .with(new ClauseLearningWithUip())
-                .withTracing(generateRefutationProof);
+                .withTracing(shouldGenerateProof);
 
         Metrics.startTimer(TOTAL);
         Assignment assignment = solver.solve(formula);
         Metrics.stopTimer(TOTAL);
 
-        if (assignment != null && assignment.isSatisfiable()) {
+        if (assignment != null) {
             if (assignment.getVariableCount() <= 100) {
                 Logger.log("\nAssignment =", assignment.toMinisatString());
             } else {
@@ -67,7 +67,6 @@ public class Main {
         } else {
             Logger.log("\nAssignment = UNSAT");
         }
-
 
         if (Metrics.isEnabled()) {
             Logger.log("\nTotal time:", Metrics.getElapsedTimeMillis(TOTAL), "ms");
@@ -78,40 +77,44 @@ public class Main {
             Logger.log("\nFinal formula size:", formula.getClauseSize());
         }
 
-        if (assignment != null && assignment.isSatisfiable()) {
+        if (assignment != null) {
             Formula originalFormula = FormulaHelper.parseFromFile(inputPath.toString());
             Logger.log("\nTest assignment:", Objects.requireNonNull(originalFormula).evaluate(assignment));
-        } else if (generateRefutationProof) {
-            UnsatProver prover = new UnsatProver(formula);
-            Proof proof = prover.prove()
-                    .expandResolutions()
-                    .renumberClauses();
-
-            if (proof.clauses.size() <= 20) {
-                Logger.log("\n" + proof);
-            } else {
-                Logger.log("The refutation proof is too big to be displayed.");
-            }
-
-            boolean isProofCorrect = false;
-
-            try {
-                isProofCorrect = proof.verify();
-            } catch (Exception err) {
-                System.err.println(err.toString());
-            }
-
-            Logger.log(String.format(
-                    "The proof is verified to be %s.",
-                    isProofCorrect ? "CORRECT" : "WRONG"
-            ));
-
-            if (isProofCorrect) {
-                String proofFilename = inputPath.getFileName().toString();
-                proof.writeToFile(proofFilename);
-                Logger.log(String.format("\nProof has been written to 'proofs/%s'.", proofFilename));
-            }
+        } else if (shouldGenerateProof) {
+            proveAndVerify(formula, inputPath);
         }
 
+    }
+
+    private static void proveAndVerify(Formula formula, Path inputPath) {
+        UnsatProver prover = new UnsatProver(formula);
+        Proof proof = prover.prove()
+                .expandResolutions();
+                //.renumberClauses();
+
+        if (proof.clauses.size() <= 20) {
+            Logger.log("\n" + proof);
+        } else {
+            Logger.log("The refutation proof is too big to be displayed.");
+        }
+
+        boolean isProofCorrect = false;
+
+        try {
+            isProofCorrect = proof.verify();
+        } catch (Exception err) {
+            System.err.println(err.toString());
+        }
+
+        Logger.log(String.format(
+                "The proof is verified to be %s.",
+                isProofCorrect ? "CORRECT" : "WRONG"
+        ));
+
+        if (isProofCorrect) {
+            String proofFilename = inputPath.getFileName().toString();
+            proof.writeToFile(proofFilename);
+            Logger.log(String.format("\nProof has been written to 'proofs/%s'.", proofFilename));
+        }
     }
 }

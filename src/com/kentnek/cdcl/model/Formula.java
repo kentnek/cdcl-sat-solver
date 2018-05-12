@@ -41,6 +41,10 @@ public class Formula implements Iterable<Clause> {
         return clauses.size();
     }
 
+    public int nextClauseId() {
+        return clauseId + 1;
+    }
+
     public void add(Clause clause) {
         clause.id = clauseId++;
         clauses.put(clause.id, clause);

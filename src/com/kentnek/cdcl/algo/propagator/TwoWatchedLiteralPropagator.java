@@ -23,10 +23,9 @@ public class TwoWatchedLiteralPropagator extends Loggable
         int first;
         int second;
 
-        // set the first or second value of this pair
-        void set(int index, int value) {
-            if (index == 0) first = value;
-            else second = value;
+        LiteralPair(int first, int second) {
+            this.first = first;
+            this.second = second;
         }
 
         // Replace the slot that contains oldValue with newValue
@@ -65,8 +64,12 @@ public class TwoWatchedLiteralPropagator extends Loggable
         // First, we watch all clauses with >= 2 literals
         formula.forEach(clause -> {
             if (clause.getLiteralSize() >= 2) {
-                // if not a unit clause, we find two watched literals.
-                this.addClause(clause);
+                // if not a unit clause, we watch its first two literals
+                watchNewClause(
+                        clause.getId(),
+                        clause.get(0).toLiteralNum(),
+                        clause.get(1).toLiteralNum()
+                );
             }
         });
 
@@ -81,24 +84,17 @@ public class TwoWatchedLiteralPropagator extends Loggable
         if (debug) Logger.debug("Initial watched pairs: ", watchedPairs);
     }
 
-    /**
-     * Add a clause, and make it watch the first two literals.
-     */
-    private void addClause(Clause clause) {
-        if (clause.getLiteralSize() <= 1) return;
-
-        int clauseId = clause.getId();
-
-        // Get the first two literals of the clause
-        for (int i = 0; i <= 1; i++) {
-            int literalNum = clause.get(i).toLiteralNum();
-            getWatchList(literalNum).add(clauseId);
-            watchedPairs.computeIfAbsent(clauseId, k -> new LiteralPair()).set(i, literalNum);
-        }
-    }
-
     private List<Integer> getWatchList(int literal) {
         return watchLists.computeIfAbsent(literal, k -> new ArrayList<>());
+    }
+
+    /**
+     * Given the new learned clause's id, and two of its literals, updates the watch lists and watched pairs.
+     */
+    private void watchNewClause(int clauseId, int firstLiteral, int secondLiteral) {
+        getWatchList(firstLiteral).add(clauseId);
+        getWatchList(secondLiteral).add(clauseId);
+        watchedPairs.put(clauseId, new LiteralPair(firstLiteral, secondLiteral));
     }
 
 
@@ -112,7 +108,7 @@ public class TwoWatchedLiteralPropagator extends Loggable
     public void learn(Clause clause) {
         // a new clause is added to the formula. We'll just set the first two literals to be watched, regardless of
         // their values.
-        addClause(clause);
+
         recentlyLearnedClause = clause;
         if (debug) Logger.debug("New watched pairs after learning:", watchedPairs);
     }
@@ -124,24 +120,43 @@ public class TwoWatchedLiteralPropagator extends Loggable
         literalsToPropagate.push(value ? -variable : variable);
     }
 
+    /**
+     * Processes the newly learned clause:
+     * <p>
+     * - If it's an unit clause, propagate the literal immediately.
+     * <p>
+     * If it's non-unit, watch two of its literals.
+     */
+    private void processLearnedClause(Clause learnedClause, Assignment assignment) {
+
+        // we check if there is any recently learned clause
+        if (learnedClause == null) return;
+
+        // if it's a unit clause, just assign it right away.
+        if (learnedClause.getLiteralSize() == 1) {
+            Literal unitLiteral = learnedClause.get(0);
+            assignment.add(
+                    unitLiteral.variable, !unitLiteral.isNegated, learnedClause.getId(), 0
+            );
+
+            return;
+        }
+
+        int firstLiteral = learnedClause.get(0).toLiteralNum();
+        int secondLiteral = learnedClause.get(1).toLiteralNum();
+
+        watchNewClause(learnedClause.getId(), firstLiteral, secondLiteral);
+
+        if (assignment.getLiteralValue(firstLiteral) == Logic.FALSE) literalsToPropagate.add(firstLiteral);
+        if (assignment.getLiteralValue(secondLiteral) == Logic.FALSE) literalsToPropagate.add(secondLiteral);
+    }
+
     @Override
     public boolean propagate(Formula formula, Assignment assignment) {
 
         // we check if there is any recently learned clause
         if (recentlyLearnedClause != null) {
-            // if it's a unit clause, just assign it right away.
-            if (recentlyLearnedClause.getLiteralSize() == 1) {
-                Literal unitLiteral = recentlyLearnedClause.get(0);
-                assignment.add(
-                        unitLiteral.variable, !unitLiteral.isNegated, recentlyLearnedClause.getId(), 0
-                );
-            } else {
-                // since the newly added clause might be tracking false variables, we need to propagate them
-                // as necessary
-                LiteralPair pair = watchedPairs.get(recentlyLearnedClause.getId());
-                if (assignment.getLiteralValue(pair.first) == Logic.FALSE) literalsToPropagate.add(pair.first);
-                if (assignment.getLiteralValue(pair.second) == Logic.FALSE) literalsToPropagate.add(pair.second);
-            }
+            processLearnedClause(recentlyLearnedClause, assignment);
             recentlyLearnedClause = null;
         }
 

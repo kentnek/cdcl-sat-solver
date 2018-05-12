@@ -2,7 +2,10 @@ package com.kentnek.cdcl.model;
 
 import com.kentnek.cdcl.Logger;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -41,6 +44,15 @@ public class Assignment implements Iterable<Assignment.SingleAssignment> {
             this.decisionLevel = decisionLevel;
             this.antecedent = antecedent;
             this.order = order;
+        }
+
+        public int toLiteralNum() {
+            return variable * (value ? 1 : -1);
+        }
+
+        @Override
+        public String toString() {
+            return toLiteralNum() + "@" + decisionLevel;
         }
     }
 
@@ -102,10 +114,6 @@ public class Assignment implements Iterable<Assignment.SingleAssignment> {
 
     public void incrementDecisionLevel() {
         this.currentDecisionLevel++;
-    }
-
-    public boolean isSatisfiable() {
-        return getKappaAntecedent() == NIL;
     }
 
     //endregion
