@@ -1,4 +1,4 @@
-# Proof for 'unsat_simple_N2.cnf':
+# Proof for 'unsat_simple_N2.txt':
 v 7
 
 1 1 2 0
@@ -6,11 +6,11 @@ v 7
 3 -1 -2 0
 4 -1 2 0
 
-5 -1 0
-6 0
-7 1 0
+5 1 0
+6 -1 0
+7 0
 
 # Resolutions:
-3 4 5
-1 2 7
-5 7 6
+1 2 5
+3 4 6
+5 6 7
