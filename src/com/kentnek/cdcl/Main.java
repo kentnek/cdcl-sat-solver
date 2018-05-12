@@ -19,7 +19,7 @@ import static com.kentnek.cdcl.Metrics.Key.*;
 
 public class Main {
 
-    private static final String INPUT_FILE_PATH = "generated/N200_K3_L1000_unsat.cnf";
+    private static final String INPUT_FILE_PATH = "generated/N150_K3_L650_unsat_hard.cnf";
 
     private static boolean shouldGenerateProof;
 
@@ -90,7 +90,7 @@ public class Main {
         UnsatProver prover = new UnsatProver(formula);
         Proof proof = prover.prove()
                 .expandResolutions();
-                //.renumberClauses();
+        //.renumberClauses();
 
         if (proof.clauses.size() <= 20) {
             Logger.log("\n" + proof);
@@ -112,7 +112,7 @@ public class Main {
         ));
 
         if (isProofCorrect) {
-            String proofFilename = inputPath.getFileName().toString();
+            String proofFilename = inputPath.getFileName().toString().replace(".cnf", ".txt");
             proof.writeToFile(proofFilename);
             Logger.log(String.format("\nProof has been written to 'proofs/%s'.", proofFilename));
         }
