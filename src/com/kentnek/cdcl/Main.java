@@ -19,14 +19,16 @@ import static com.kentnek.cdcl.Metrics.Key.*;
 
 public class Main {
 
+    // relative to "/inputs"
     private static final String INPUT_FILE_PATH = "simple/unsat_simple_N3.cnf";
 
     private static boolean shouldGenerateProof;
 
     // This will check if the Java Debug Wire Protocol agent is used.
-    private static boolean isDebugMode = java.lang.management.ManagementFactory.getRuntimeMXBean().
-            getInputArguments().toString().contains("jdwp");
+    private static boolean isDebugMode = java.lang.management.ManagementFactory.getRuntimeMXBean()
+            .getInputArguments().toString().contains("jdwp");
 
+    // Configs
     static {
         Logger.setShowDebug(isDebugMode);
         Metrics.setEnabled(true);
